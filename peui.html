@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Перечень элементов ПЭ3 из BOM онлайн по ГОСТ</title>
+<style>
+  :root {
+    --bg: #f6f5f1; --card: #ffffff; --ink: #1d2126; --muted: #626a73; --line: #dedbd2;
+    --accent: #1f5fa8; --err: #b3261e; --errbg: #fbe9e7; --warn: #8a5a00; --warnbg: #fdf1d6;
+    --note: #3d5a80; --notebg: #e6eef7; --ok: #1e6b3a; --okbg: #e3f3e8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #15181c; --card: #1e2227; --ink: #e8eaed; --muted: #9aa3ad; --line: #32383f;
+      --accent: #7fb2ee; --err: #ff8a80; --errbg: #3a1d1b; --warn: #f2c261; --warnbg: #3a2f14;
+      --note: #9fc1e8; --notebg: #1c2a3a; --ok: #7fd49b; --okbg: #17301f;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; }
+  main { max-width: 1240px; margin: 0 auto; padding: 28px 20px 60px; }
+  header h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  header p { margin: 0; color: var(--muted); }
+  .privacy { margin: 16px 0 0; padding: 10px 14px; border-left: 3px solid var(--ok); background: var(--okbg); border-radius: 0 6px 6px 0; font-size: 14px; }
+  .grid { display: grid; grid-template-columns: minmax(330px, 420px) 1fr; gap: 20px; margin-top: 20px; align-items: start; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
+  .card h2 { font-size: 16px; margin: 0 0 10px; }
+  .step { color: var(--muted); font-weight: 600; margin-right: 6px; }
+  .drop { border: 2px dashed var(--line); border-radius: 8px; padding: 20px 14px; text-align: center; cursor: pointer; }
+  .drop:hover, .drop.over, .drop:focus-visible { border-color: var(--accent); outline: none; }
+  .drop strong { display: block; }
+  .drop span { color: var(--muted); font-size: 13px; }
+  .file { margin-top: 8px; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+  label.f { display: block; font-size: 13px; color: var(--muted); margin: 8px 0 2px; }
+  input[type=text], input[type=number], textarea { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); }
+  textarea { resize: vertical; min-height: 54px; }
+  input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+  .sign { display: grid; grid-template-columns: 96px 1fr; gap: 6px 8px; align-items: center; margin-top: 6px; }
+  .sign input.lbl { color: var(--muted); }
+  .lit { display: flex; gap: 6px; }
+  .lit input { width: 52px; text-align: center; }
+  .chk { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; margin: 6px 0; }
+  .num { display: flex; gap: 8px; align-items: center; font-size: 14px; margin: 6px 0; }
+  .num input { width: 64px; }
+  button { font: inherit; padding: 8px 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  @media (prefers-color-scheme: dark) { button.primary { color: #10161d; } }
+  button:disabled { opacity: .5; cursor: default; }
+  .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+  #status { color: var(--muted); font-size: 14px; }
+  .preview { width: 100%; height: 1000px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .empty { height: 300px; display: flex; align-items: center; justify-content: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 10px; text-align: center; padding: 20px; }
+  .w { display: grid; grid-template-columns: 92px 1fr; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .w:first-of-type { border-top: 0; }
+  .chip { font-size: 12px; padding: 2px 8px; border-radius: 999px; font-weight: 600; justify-self: start; white-space: nowrap; }
+  .chip.err { color: var(--err); background: var(--errbg); } .chip.warn { color: var(--warn); background: var(--warnbg); } .chip.note { color: var(--note); background: var(--notebg); }
+  .muted { color: var(--muted); font-size: 13px; }
+  .foot { color: var(--muted); font-size: 13px; margin-top: 26px; }
+  table.cols { border-collapse: collapse; font-size: 13px; margin: 6px 0; width: 100%; }
+  table.cols td { border-bottom: 1px solid var(--line); padding: 3px 8px 3px 0; vertical-align: top; }
+  select { font: inherit; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--ink); max-width: 100%; }
+  .map { display: grid; grid-template-columns: 150px 1fr; gap: 6px 10px; align-items: center; font-size: 14px; }
+  .map span { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Перечень элементов из BOM</h1>
+    <p>BOM из Altium, KiCad, P-CAD или любой таблицы превращается в перечень элементов (ПЭ3) по ГОСТ 2.701-2008 с рамкой и основной надписью по ГОСТ Р 2.104. Прототип, версия <span id="ver"></span>.</p>
+  </header>
+  <p class="privacy">Таблица обрабатывается в вашем браузере и никуда не отправляется. Страница работает без интернета.</p>
+  <div class="grid">
+    <div>
+      <section class="card">
+        <h2><span class="step">1</span>BOM</h2>
+        <div class="bar"><button id="tpl">Скачать шаблон Excel</button></div>
+        <div class="drop" id="drop" tabindex="0" role="button" aria-label="Выбрать файл BOM">
+          <strong>Перетащите сюда BOM или нажмите, чтобы выбрать</strong>
+          <span>Excel (.xlsx, .xls), OpenOffice (.ods) или CSV</span>
+          <input type="file" id="pick" accept=".xlsx,.xls,.xlsm,.ods,.csv,.txt" hidden>
+        </div>
+        <div class="file" id="fname"></div>
+        <div id="mapBox" hidden style="margin-top:12px">
+          <p class="muted" style="margin:0 0 6px">Колонки распознаны автоматически — проверьте и при необходимости поправьте.</p>
+          <div class="map">
+            <span>Поз. обозначение</span><select id="mDesig"></select>
+            <span>Наименование</span><select id="mName"></select>
+            <span>…и дописать к нему</span><select id="mName2"></select>
+            <span>Примечание</span><select id="mNote"></select>
+            <span>Кол. (для сверки)</span><select id="mQty"></select>
+            <span>Не устанавливать</span><select id="mDnp"></select>
+          </div>
+        </div>
+        <details style="margin-top:10px">
+          <summary class="muted" style="cursor:pointer">Какой BOM подойдёт</summary>
+          <p class="muted">Любая таблица, где есть колонка позиционных обозначений (Designator, Reference, «Поз. обозначение») и колонка с наименованием или номиналом (Comment, Value, Part Number, «Наименование»). Обозначения можно писать списком («R1, R2, R5») или диапазоном («R1-R4»). Строки без позиционного обозначения (плата, крепёж) пропускаются. Читается первый лист книги.</p>
+        </details>
+      </section>
+      <section class="card" id="req">
+        <h2><span class="step">2</span>Реквизиты основной надписи</h2>
+        <label class="f" for="desig">Обозначение документа</label>
+        <input type="text" id="desig" placeholder="АБВГ.123456.001 ПЭ3">
+        <label class="f" for="name">Наименование изделия</label>
+        <textarea id="name" rows="2" placeholder="Блок управления"></textarea>
+        <label class="f" for="docName">Наименование документа</label>
+        <input type="text" id="docName" value="Перечень элементов">
+        <label class="f" for="org">Организация</label>
+        <input type="text" id="org" placeholder="ООО «Пример»">
+        <div class="row2">
+          <div><label class="f">Литера</label><div class="lit"><input type="text" id="lit1" maxlength="3" aria-label="Литера 1"><input type="text" id="lit2" maxlength="3" aria-label="Литера 2"><input type="text" id="lit3" maxlength="3" aria-label="Литера 3"></div></div>
+          <div><label class="f" for="ver2">Версия (графа «Вер.»)</label><input type="text" id="ver2"></div>
+        </div>
+        <label class="f">Фамилии (подписи и даты ставятся от руки)</label>
+        <div class="sign">
+          <input type="text" class="lbl" id="l1" value="Разраб." aria-label="Строка 1"><input type="text" id="razrab" aria-label="Разработал">
+          <input type="text" class="lbl" id="l2" value="Пров." aria-label="Строка 2"><input type="text" id="prov" aria-label="Проверил">
+          <input type="text" class="lbl" id="l3" value="Т.контр." aria-label="Строка 3"><input type="text" id="r3" aria-label="Строка 3, фамилия">
+          <input type="text" class="lbl" id="l4" value="Н. контр." aria-label="Строка 4"><input type="text" id="nkontr" aria-label="Нормоконтроль">
+          <input type="text" class="lbl" id="l5" value="Утв." aria-label="Строка 5"><input type="text" id="utv" aria-label="Утвердил">
+        </div>
+        <div class="row2">
+          <div><label class="f" for="perv">Перв. примен.</label><input type="text" id="perv"></div>
+          <div><label class="f" for="sprav">Справ. №</label><input type="text" id="sprav"></div>
+        </div>
+        <label class="f" for="inv">Инв. № подл.</label>
+        <input type="text" id="inv">
+      </section>
+      <section class="card">
+        <h2><span class="step">3</span>Настройки</h2>
+        <label class="chk"><input type="checkbox" id="headings" checked><span>Группы элементов одного вида под общим заголовком («Резисторы», «Конденсаторы»), если в группе больше одной строки</span></label>
+        <label class="chk"><input type="checkbox" id="common" checked><span>Общую часть наименования выносить в заголовок группы (ГОСТ 2.701-2008, п. 5.7.6, примечание 3)</span></label>
+        <label class="chk"><input type="checkbox" id="addType" checked><span>Дописывать вид элемента перед наименованием одиночных элементов («Диод BAT54C»), если его нет</span></label>
+        <div class="num"><span>Диапазон обозначений:</span><select id="sep"><option value=" - ">R1 - R4</option><option value="–">R1–R4</option><option value="...">R1...R4</option></select></div>
+        <label class="chk"><input type="checkbox" id="blank" checked><span>Пустая строка между группами (допускается ГОСТ 2.701-2008, п. 5.7.7)</span></label>
+        <label class="chk"><input type="checkbox" id="keepDnp"><span>Включать элементы с отметкой «не устанавливать» (с примечанием)</span></label>
+        <label class="chk"><input type="checkbox" id="lastLine"><span>Если наименование занимает несколько строк, писать количество и примечание на уровне последней строки</span></label>
+        <label class="chk"><input type="checkbox" id="italic"><span>Наклонный шрифт</span></label>
+      </section>
+    </div>
+    <div>
+      <div class="bar">
+        <button class="primary" id="save" disabled>Скачать PDF</button>
+        <button id="xls" disabled>Скачать таблицу Excel</button>
+        <span id="status"></span>
+      </div>
+      <section class="card" id="warnCard" hidden>
+        <h2>Замечания к BOM</h2>
+        <div id="warns"></div>
+      </section>
+      <div id="pv"><div class="empty">Загрузите BOM или скачайте шаблон и заполните его.<br>Предпросмотр появится здесь.</div></div>
+    </div>
+  </div>
+  <p class="foot">Перечень элементов — ГОСТ 2.701-2008 (п. 5.7, рисунок 4): графы 20, 110, 10 и 45 мм, строки 8 мм. Элементы записываются группами по буквенным позиционным обозначениям в алфавитном порядке, внутри группы — по возрастанию номеров; одинаковые элементы с последовательными номерами — одной строкой. Основная надпись — ГОСТ Р 2.104-2023 (формы 2 и 2а). Лист регистрации изменений не выводится. Перед выпуском документа проверьте результат.</p>
+</main>
+<script>/*__XLSX__*/</script>
+<script>/*__PDFLIB__*/</script>
+<script>/*__FONTKIT__*/</script>
+<script>var FONT_REG = '/*__FONT_REG__*/', FONT_IT = '/*__FONT_IT__*/';</script>
+<script>/*__ESKDPDF__*/</script>
+<script>/*__PE__*/</script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var SEV = { error: 'Ошибка', err: 'Ошибка', warn: 'Замечание', note: 'Проверьте' };
+  var FIELDS = ['desig', 'name', 'docName', 'org', 'lit1', 'lit2', 'lit3', 'ver2', 'l1', 'razrab', 'l2', 'prov', 'l3', 'r3', 'l4', 'nkontr', 'l5', 'utv', 'perv', 'sprav', 'inv', 'headings', 'common', 'addType', 'sep', 'blank', 'keepDnp', 'lastLine', 'italic'];
+  var MAP = { mDesig: 'desig', mName: 'name', mName2: 'name2', mNote: 'note', mQty: 'qty', mDnp: 'dnp' };
+  var rows = null, info = null, lastPdf = null, lastUrl = null, lastBlocks = null, timer = null;
+  $('ver').textContent = PE.VERSION;
+  function b64(s) { var bin = atob(s), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+  var fonts = { reg: b64(FONT_REG), it: b64(FONT_IT) };
+  function store(save) {
+    try {
+      if (save) { var o = {}; FIELDS.forEach(function (k) { var e = $(k); o[k] = e.type === 'checkbox' ? e.checked : e.value; }); localStorage.setItem('eskd-pe-req', JSON.stringify(o)); }
+      else {
+        var d = JSON.parse(localStorage.getItem('eskd-pe-req') || 'null');
+        if (!d) { // реквизиты организации и фамилии — из спецификации, если там уже заполнены
+          var s = JSON.parse(localStorage.getItem('eskd-spec-req') || 'null');
+          if (s) { d = {}; ['org', 'l1', 'razrab', 'l2', 'prov', 'l3', 'r3', 'l4', 'nkontr', 'l5', 'utv', 'italic'].forEach(function (k) { if (s[k] !== undefined) d[k] = s[k]; }); }
+        }
+        if (d) FIELDS.forEach(function (k) { var e = $(k); if (d[k] === undefined || !e) return; if (e.type === 'checkbox') e.checked = !!d[k]; else e.value = d[k]; });
+      }
+    } catch (e) {}
+  }
+  store(false);
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function fillMap() {
+    Object.keys(MAP).forEach(function (id) {
+      var s = $(id), key = MAP[id]; s.innerHTML = '';
+      var o0 = el('option', '', id === 'mDesig' ? '— выберите —' : '— нет —'); o0.value = ''; s.appendChild(o0);
+      info.headers.forEach(function (h, i) { if (!h) return; var o = el('option', '', h); o.value = i; s.appendChild(o); });
+      s.value = info.sel[key] == null ? '' : String(info.sel[key]);
+    });
+    $('mapBox').hidden = false;
+  }
+  function readFile(file) {
+    var rd = new FileReader();
+    rd.onload = function () {
+      try {
+        var wb = XLSX.read(new Uint8Array(rd.result), { type: 'array', cellDates: false });
+        var ws = wb.Sheets[wb.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '', blankrows: true });
+        info = PE.detect(rows);
+        $('fname').textContent = 'Файл: ' + file.name + ' · лист «' + wb.SheetNames[0] + '» · строк: ' + rows.length;
+        if (!info) { $('mapBox').hidden = true; $('status').textContent = 'Не найдена колонка позиционных обозначений (Designator, Reference, «Поз. обозначение»).'; return; }
+        fillMap(); build();
+      } catch (e) { rows = null; $('fname').textContent = 'Не удалось прочитать файл: ' + (e && e.message ? e.message : e); }
+    };
+    rd.readAsArrayBuffer(file);
+  }
+  Object.keys(MAP).forEach(function (id) { $(id).addEventListener('change', function () { if (!info) return; var v = $(id).value; info.sel[MAP[id]] = v === '' ? null : +v; build(); }); });
+  function meta() {
+    var v = function (k) { return $(k).value.trim(); };
+    return { desig: v('desig'), name: v('name'), docName: v('docName'), org: v('org'), lit: [v('lit1'), v('lit2'), v('lit3')], ver: v('ver2'),
+      l1: v('l1'), razrab: v('razrab'), l2: v('l2'), prov: v('prov'), l3: v('l3'), r3: v('r3'), l4: v('l4'), nkontr: v('nkontr'), l5: v('l5'), utv: v('utv'),
+      pervPrimen: v('perv'), spravN: v('sprav'), invPodl: v('inv') };
+  }
+  async function build() {
+    store(true);
+    if (!rows || !info) return;
+    if (info.sel.desig == null) { $('status').textContent = 'Выберите колонку позиционных обозначений.'; return; }
+    $('status').textContent = 'Собираю…';
+    var opt = { headings: $('headings').checked, commonPrefix: $('common').checked, addType: $('addType').checked, sep: $('sep').value, blank: $('blank').checked, keepDnp: $('keepDnp').checked, lastLine: $('lastLine').checked };
+    var parsed = PE.parse(rows, info, opt);
+    var blocks = PE.arrange(parsed.elems, opt);
+    var m = meta(), warns = parsed.warnings.slice();
+    if (!m.desig) warns.unshift({ sev: 'warn', msg: 'Не указано обозначение документа (графа 2 основной надписи), например «АБВГ.123456.001 ПЭ3».' });
+    else if (!/\sП[А-ЯЁ]\d$/.test(m.desig)) warns.unshift({ sev: 'note', msg: 'Код перечня элементов составляют из буквы «П» и кода схемы: для схемы электрической принципиальной — ПЭ3 (ГОСТ 2.701-2008, п. 5.7.4). В обозначении «' + m.desig + '» такого кода нет.' });
+    if (!m.name) warns.unshift({ sev: 'warn', msg: 'Не указано наименование изделия (графа 1 основной надписи).' });
+    var box = $('warns'); box.textContent = '';
+    var order = { error: 0, err: 0, warn: 1, note: 2 };
+    warns.sort(function (a, b) { return order[a.sev] - order[b.sev] || (a.row || 0) - (b.row || 0); });
+    warns.forEach(function (w) {
+      var r = el('div', 'w'), side = el('div');
+      side.appendChild(el('span', 'chip ' + (w.sev === 'error' ? 'err' : w.sev), SEV[w.sev]));
+      if (w.row) side.appendChild(el('div', 'muted', 'строка ' + w.row));
+      r.appendChild(side); r.appendChild(el('div', '', w.msg)); box.appendChild(r);
+    });
+    $('warnCard').hidden = !warns.length;
+    if (!parsed.elems.length) { $('status').textContent = 'В BOM не найдено ни одного элемента с позиционным обозначением.'; return; }
+    try {
+      var out = await PE.render(PDFLib, fontkit, $('italic').checked ? fonts.it : fonts.reg, blocks, m, opt);
+      lastPdf = out.bytes; lastBlocks = blocks;
+      if (lastUrl) URL.revokeObjectURL(lastUrl);
+      lastUrl = URL.createObjectURL(new Blob([out.bytes], { type: 'application/pdf' }));
+      var pv = $('pv'); pv.textContent = '';
+      var fr = el('iframe', 'preview'); fr.title = 'Предпросмотр перечня элементов'; fr.src = lastUrl + '#view=FitH'; pv.appendChild(fr);
+      $('save').disabled = false; $('xls').disabled = false;
+      var nl = blocks.reduce(function (a, b) { return a + b.lines.length; }, 0);
+      $('status').textContent = 'Готово: элементов ' + parsed.elems.length + ', строк перечня ' + nl + ', листов ' + out.pages + '.';
+    } catch (e) { $('status').textContent = 'Ошибка при сборке PDF: ' + (e && e.message ? e.message : e); }
+  }
+  function later() { clearTimeout(timer); timer = setTimeout(build, 400); }
+  FIELDS.forEach(function (k) { var e = $(k); e.addEventListener(e.type === 'checkbox' || e.tagName === 'SELECT' ? 'change' : 'input', later); });
+  var drop = $('drop'), pick = $('pick');
+  drop.addEventListener('click', function () { pick.click(); });
+  drop.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick.click(); } });
+  pick.addEventListener('change', function () { if (pick.files[0]) readFile(pick.files[0]); pick.value = ''; });
+  ['dragenter', 'dragover'].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+  ['dragleave', 'drop'].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
+  drop.addEventListener('drop', function (e) { if (e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]); });
+  window.addEventListener('dragover', function (e) { e.preventDefault(); });
+  window.addEventListener('drop', function (e) { e.preventDefault(); });
+  function fname(ext) { return ($('desig').value.trim() || 'perechen-elementov').replace(/[\\/:*?"<>|]/g, '_') + ext; }
+  $('tpl').addEventListener('click', function () {
+    var ws = XLSX.utils.aoa_to_sheet(PE.templateRows());
+    ws['!cols'] = [{ wch: 18 }, { wch: 50 }, { wch: 6 }, { wch: 24 }];
+    var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'BOM');
+    XLSX.writeFile(wb, 'shablon-perechnya-elementov.xlsx');
+  });
+  $('xls').addEventListener('click', function () {
+    if (!lastBlocks) return;
+    var ws = XLSX.utils.aoa_to_sheet(PE.tableRows(lastBlocks));
+    ws['!cols'] = [{ wch: 16 }, { wch: 60 }, { wch: 6 }, { wch: 30 }];
+    var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Перечень элементов');
+    XLSX.writeFile(wb, fname('.xlsx'));
+  });
+  $('save').addEventListener('click', function () {
+    if (!lastPdf) return;
+    var a = el('a'); a.href = lastUrl; a.download = fname('.pdf'); document.body.appendChild(a); a.click(); a.remove();
+  });
+})();
+</script>
+</body>
+</html>

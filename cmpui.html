@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Сравнение чертежей PDF и BOM онлайн — что изменилось в новой версии</title>
+<style>
+  :root {
+    --bg: #f6f5f1; --card: #ffffff; --ink: #1d2126; --muted: #626a73; --line: #dedbd2;
+    --accent: #1f5fa8; --ok: #1e6b3a; --okbg: #e3f3e8; --rem: #d32f2f; --add: #138a3e; --sel: #ff9800;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #15181c; --card: #1e2227; --ink: #e8eaed; --muted: #9aa3ad; --line: #32383f; --accent: #7fb2ee; --ok: #7fd49b; --okbg: #17301f; --rem: #ff8a80; --add: #6fdc95; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; }
+  main { max-width: 1180px; margin: 0 auto; padding: 28px 20px 60px; }
+  header h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  header p { margin: 0; color: var(--muted); }
+  .privacy { margin: 16px 0 0; padding: 10px 14px; border-left: 3px solid var(--ok); background: var(--okbg); border-radius: 0 6px 6px 0; font-size: 14px; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 22px 0 8px; }
+  @media (max-width: 700px) { .pair { grid-template-columns: 1fr; } }
+  .drop { border: 2px dashed var(--line); border-radius: 10px; background: var(--card); padding: 26px 18px; text-align: center; cursor: pointer; transition: border-color .15s; }
+  .drop:hover, .drop.over, .drop:focus-visible { border-color: var(--accent); outline: none; }
+  .drop strong { display: block; font-size: 17px; margin-bottom: 2px; }
+  .drop .tag { display: inline-block; font-size: 13px; font-weight: 700; padding: 1px 10px; border-radius: 999px; margin-bottom: 8px; color: #fff; }
+  .drop.a .tag { background: var(--rem); } .drop.b .tag { background: var(--add); }
+  @media (prefers-color-scheme: dark) { .drop .tag { color: #15181c; } }
+  .drop span.hint { color: var(--muted); font-size: 14px; }
+  .drop .fname { margin-top: 6px; font-weight: 600; overflow-wrap: anywhere; }
+  .drop.filled { border-style: solid; }
+  .bar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin: 14px 0 6px; }
+  .bar label { display: flex; gap: 6px; align-items: center; font-size: 14px; color: var(--muted); }
+  button { font: inherit; padding: 7px 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button:disabled { opacity: .5; cursor: default; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  @media (prefers-color-scheme: dark) { button.primary { color: #15181c; } }
+  button.on { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  select { font: inherit; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+  [hidden] { display: none !important; }
+  .res { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 14px; margin-top: 14px; }
+  @media (max-width: 900px) { .res { grid-template-columns: 1fr; } }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .tools { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  .tools button { padding: 4px 10px; font-size: 14px; }
+  .tools .sep { width: 1px; height: 22px; background: var(--line); margin: 0 4px; }
+  .tools .info { font-size: 13px; color: var(--muted); }
+  .view { position: relative; height: 72vh; min-height: 380px; background: #fff; cursor: grab; touch-action: none; }
+  .view.drag { cursor: grabbing; }
+  .view canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 8px 12px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 5px; }
+  #swipeRow { padding: 6px 12px; border-top: 1px solid var(--line); }
+  #swipeRow input { width: 100%; }
+  .side { max-height: calc(72vh + 96px); overflow: auto; }
+  .side h3 { font-size: 14px; margin: 0; padding: 10px 14px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--card); }
+  .item { display: block; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 8px 14px; background: transparent; font-size: 14px; }
+  .item:hover, .item.sel { background: var(--bg); }
+  .item b { font-variant-numeric: tabular-nums; }
+  .item .k { font-size: 12px; font-weight: 700; margin-right: 6px; }
+  .k.removed { color: var(--rem); } .k.added { color: var(--add); } .k.changed { color: var(--sel); }
+  .item del { color: var(--rem); } .item ins { color: var(--add); text-decoration: none; }
+  .none { padding: 12px 14px; color: var(--muted); font-size: 14px; }
+  .summary { margin: 16px 0 0; font-size: 15px; }
+  .summary b { font-variant-numeric: tabular-nums; }
+  table.pages { border-collapse: collapse; width: 100%; font-size: 14px; }
+  table.pages th, table.pages td { text-align: left; padding: 6px 12px; border-bottom: 1px solid var(--line); }
+  table.pages tr.click { cursor: pointer; } table.pages tr.click:hover { background: var(--bg); }
+  details { background: var(--card); border: 1px solid var(--line); border-radius: 10px; margin: 18px 0; padding: 0 18px; }
+  details summary { cursor: pointer; padding: 14px 0; font-weight: 600; }
+  details p, details li { font-size: 14px; max-width: 80ch; }
+  .foot { margin-top: 24px; font-size: 13px; color: var(--muted); }
+  .modes { display: inline-flex; margin: 20px 0 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .modes button { border: 0; border-radius: 0; padding: 8px 18px; background: var(--card); }
+  .modes button + button { border-left: 1px solid var(--line); }
+  .modes button.on { background: var(--accent); color: #fff; font-weight: 600; }
+  @media (prefers-color-scheme: dark) { .modes button.on { color: #15181c; } }
+  .bt { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .bt th, .bt td { text-align: left; padding: 6px 12px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .bt td.d { white-space: nowrap; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .bt del { color: var(--rem); } .bt ins { color: var(--add); text-decoration: none; }
+  .bsec { padding: 0 16px 8px; } .bsec h3 { font-size: 15px; margin: 14px 0 6px; }
+  .mapline { font-size: 13px; color: var(--muted); margin-top: 6px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Сравнение версий</h1>
+    <p>Две версии чертежа в PDF или две версии BOM — инструмент покажет, что изменилось. На чертежах <b style="color:var(--rem)">красное</b> — было и убрано, <b style="color:var(--add)">зелёное</b> — добавлено. Прототип, версия <span id="ver"></span>.</p>
+    <p class="privacy">Файлы обрабатываются в вашем браузере и никуда не отправляются. Страница работает без интернета.</p>
+  </header>
+
+  <div class="modes" role="tablist"><button id="modeBtnPdf" class="on" role="tab">Чертежи PDF</button><button id="modeBtnBom" role="tab">Таблицы BOM</button></div>
+
+  <div id="modeBom" hidden>
+    <div class="pair">
+      <div class="drop a" id="bdropA" tabindex="0" role="button" aria-label="Выбрать старый BOM">
+        <span class="tag">БЫЛО</span><strong>Старый BOM</strong><span class="hint">Excel или CSV</span>
+        <div class="fname" id="bnameA"></div><input type="file" id="bpickA" accept=".xlsx,.xls,.ods,.csv,.txt" hidden>
+      </div>
+      <div class="drop b" id="bdropB" tabindex="0" role="button" aria-label="Выбрать новый BOM">
+        <span class="tag">СТАЛО</span><strong>Новый BOM</strong><span class="hint">Excel или CSV</span>
+        <div class="fname" id="bnameB"></div><input type="file" id="bpickB" accept=".xlsx,.xls,.ods,.csv,.txt" hidden>
+      </div>
+    </div>
+    <div class="bar"><button id="bomXls" disabled>Скачать отчёт Excel</button><span id="bomStatus" style="color:var(--muted)"></span></div>
+    <div class="panel" id="bomOut" hidden></div>
+    <p class="foot">Компоненты сопоставляются по позиционным обозначениям (R1, C5…). Для каждого обозначения сравниваются все колонки, которые есть в обоих файлах, кроме количества. Отдельно считается, сколько штук каждого компонента стало больше или меньше. Обозначения списком («R1, R2») и диапазоном («R1-R4») раскрываются.</p>
+  </div>
+
+  <div id="modePdf">
+  <div class="pair">
+    <div class="drop a" id="dropA" tabindex="0" role="button" aria-label="Выбрать старую версию PDF">
+      <span class="tag">БЫЛО</span>
+      <strong>Старая версия</strong>
+      <span class="hint">Перетащите PDF или нажмите, чтобы выбрать</span>
+      <div class="fname" id="nameA"></div>
+      <input type="file" id="pickA" accept="application/pdf,.pdf" hidden>
+    </div>
+    <div class="drop b" id="dropB" tabindex="0" role="button" aria-label="Выбрать новую версию PDF">
+      <span class="tag">СТАЛО</span>
+      <strong>Новая версия</strong>
+      <span class="hint">Перетащите PDF или нажмите, чтобы выбрать</span>
+      <div class="fname" id="nameB"></div>
+      <input type="file" id="pickB" accept="application/pdf,.pdf" hidden>
+    </div>
+  </div>
+
+  <div class="bar">
+    <label>Лист «было» <select id="pgA" disabled></select></label>
+    <label>Лист «стало» <select id="pgB" disabled></select></label>
+    <label title="Насколько сдвиг линии считается изменением">Чувствительность
+      <select id="tol"><option value="1">высокая</option><option value="2" selected>обычная</option><option value="4">низкая</option></select></label>
+    <label title="Чем выше, тем мельче видны изменения, но дольше расчёт">Детальность
+      <select id="dpi"><option value="100">обычная</option><option value="150" selected>высокая</option><option value="220">максимальная</option></select></label>
+    <button class="primary" id="run" disabled>Сравнить</button>
+    <button id="all" hidden>Сравнить все листы</button>
+    <button id="save" disabled>Сохранить картинку</button>
+    <span id="status" style="color:var(--muted)"></span>
+  </div>
+
+  <p class="summary" id="sum" hidden></p>
+
+  <div class="panel" id="allPanel" hidden style="margin-top:14px">
+    <table class="pages" id="allTable"><thead><tr><th>Лист</th><th>Изменений графики</th><th>Изменений текста</th></tr></thead><tbody></tbody></table>
+  </div>
+
+  <div class="res" id="res" hidden>
+    <div class="panel">
+      <div class="tools">
+        <button data-mode="overlay" class="on">Наложение</button>
+        <button data-mode="a">Было</button>
+        <button data-mode="b">Стало</button>
+        <button data-mode="swipe">Шторка</button>
+        <span class="sep"></span>
+        <button id="fit" title="Вписать лист (двойной щелчок)">Вписать</button>
+        <button id="zout" title="Уменьшить">−</button>
+        <button id="zin" title="Увеличить">+</button>
+        <span class="sep"></span>
+        <label class="info" style="display:flex;gap:4px;align-items:center"><input type="checkbox" id="boxes" checked> рамки изменений</label>
+        <span class="sep"></span>
+        <span class="info">Сдвиг «стало»:</span>
+        <button data-nudge="-1,0" title="Влево">←</button><button data-nudge="0,-1" title="Вверх">↑</button><button data-nudge="0,1" title="Вниз">↓</button><button data-nudge="1,0" title="Вправо">→</button>
+        <span class="info" id="shiftInfo"></span>
+      </div>
+      <div class="view" id="view"><canvas id="cv"></canvas></div>
+      <div id="swipeRow" hidden><input type="range" id="swipe" min="0" max="1000" value="500" aria-label="Положение шторки"></div>
+      <div class="legend">
+        <span><i style="background:#d32f2f"></i>было, убрано</span>
+        <span><i style="background:#138a3e"></i>добавлено</span>
+        <span><i style="background:#9aa0a6"></i>без изменений</span>
+        <span>Колесо мыши — масштаб, перетаскивание — перемещение</span>
+      </div>
+    </div>
+    <div class="panel side" id="side">
+      <h3 id="sideHead">Изменения</h3>
+      <div id="list"></div>
+    </div>
+  </div>
+
+  <details>
+    <summary>Как это работает и ограничения</summary>
+    <ul>
+      <li>Оба листа отрисовываются в изображение одного масштаба. Новая версия совмещается со старой: сначала по рамке чертежа (по углу с основной надписью), затем уточняется по совпадению линий. Если совмещение ошиблось, его можно поправить стрелками «Сдвиг».</li>
+      <li>Линия считается изменённой, если в другой версии рядом с ней нет линии. Допуск задаёт «Чувствительность»: при низкой мелкие сдвиги не подсвечиваются.</li>
+      <li>Если в PDF есть текстовый слой, тексты сравниваются отдельно: изменённые размеры, надписи, технические требования, графы основной надписи.</li>
+      <li>Сравнивается то, что видно на листе, а не модель: изменение, не попавшее на чертёж, найдено не будет. Масштаб изображения внутри листа должен совпадать — если вид перемасштабирован, будет подсвечен весь вид.</li>
+      <li>Сканы сравниваются только как изображения; из-за перекоса скана совпадение будет неточным.</li>
+    </ul>
+  </details>
+
+  </div>
+
+  <p class="foot">Сравнение помогает увидеть изменения, но не заменяет проверку извещения и чертежа. Результат нужно проверять.</p>
+</main>
+
+<script>/*__PDFJS__*/</script>
+<script>/*__PDFWORKER__*/</script>
+<script>/*__CMP__*/</script>
+<script>/*__XLSX__*/</script>
+<script>/*__PE__*/</script>
+<script>/*__BOMCMP__*/</script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  $('ver').textContent = CMP.VERSION;
+
+  var docs = { A: null, B: null };
+  var cur = null;          // результат текущего сравнения
+  var view = { scale: 1, px: 0, py: 0, mode: 'overlay', sel: 0 };
+  var MAXSIDE = 6000;
+
+  // ---------- загрузка ----------
+  function setupDrop(key) {
+    var drop = $('drop' + key), pick = $('pick' + key);
+    drop.addEventListener('click', function () { pick.click(); });
+    drop.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick.click(); } });
+    pick.addEventListener('change', function () { if (pick.files[0]) load(key, pick.files[0]); pick.value = ''; });
+    drop.addEventListener('dragover', function (e) { e.preventDefault(); drop.classList.add('over'); });
+    drop.addEventListener('dragleave', function () { drop.classList.remove('over'); });
+    drop.addEventListener('drop', function (e) {
+      e.preventDefault(); drop.classList.remove('over');
+      var fs = Array.prototype.filter.call(e.dataTransfer.files, function (f) { return /\.pdf$/i.test(f.name) || f.type === 'application/pdf'; });
+      if (fs.length >= 2 && !docs.A && !docs.B) { load('A', fs[0]); load('B', fs[1]); return; }
+      if (fs[0]) load(key, fs[0]);
+    });
+  }
+  setupDrop('A'); setupDrop('B');
+
+  async function load(key, file) {
+    $('status').textContent = 'Открываю ' + file.name + '…';
+    try {
+      var data = new Uint8Array(await file.arrayBuffer());
+      var pdf = await pdfjsLib.getDocument({ data: data, isEvalSupported: false, useSystemFonts: true }).promise;
+      docs[key] = { name: file.name, pdf: pdf, n: pdf.numPages };
+      $('name' + key).textContent = file.name + ' · листов: ' + pdf.numPages;
+      $('drop' + key).classList.add('filled');
+      var sel = $('pg' + key); sel.innerHTML = '';
+      for (var i = 1; i <= pdf.numPages; i++) { var o = el('option', '', String(i)); o.value = i; sel.appendChild(o); }
+      sel.disabled = pdf.numPages < 2;
+      $('status').textContent = '';
+    } catch (e) {
+      docs[key] = null; $('name' + key).textContent = 'Не удалось открыть: ' + (e && e.message || e);
+      $('status').textContent = '';
+    }
+    var both = docs.A && docs.B;
+    $('run').disabled = !both;
+    $('all').hidden = !(both && (docs.A.n > 1 || docs.B.n > 1));
+    if (both) run();
+  }
+
+  // ---------- отрисовка листа ----------
+  async function renderPage(pdf, num, scale) {
+    var page = await pdf.getPage(num);
+    var vp = page.getViewport({ scale: scale });
+    var c = document.createElement('canvas');
+    c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+    var ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+    var tc = await page.getTextContent();
+    var items = [];
+    tc.items.forEach(function (it) {
+      if (!it.str || !it.str.trim()) return;
+      var t = it.transform, a = t[0], b = t[1], cc = t[2], d = t[3];
+      var len = Math.hypot(a, b) || 1, h = Math.hypot(cc, d) || len;
+      var ux = a / len, uy = b / len, w = it.width || 0;
+      // центр строки в координатах PDF: от начала вдоль направления на w/2 и вверх на h/2
+      var px = t[4] + ux * w / 2 - uy * h / 2, py = t[5] + uy * w / 2 + ux * h / 2;
+      var p = vp.convertToViewportPoint(px, py), p0 = vp.convertToViewportPoint(t[4], t[5]);
+      var ang = Math.round(Math.atan2(b, a) * 180 / Math.PI);
+      items.push({ s: it.str, x: p0[0], y: p[1], w: w * scale, h: h * scale, dir: ang, cxRaw: p[0] });
+    });
+    return { canvas: c, w: c.width, h: c.height, items: items, ptW: vp.width / scale, ptH: vp.height / scale };
+  }
+
+  function prepItems(items, ox, oy) {
+    var m = CMP.mergeItems(items.map(function (t) {
+      return { s: t.s, x: t.x + ox, y: t.y + oy, w: t.w, h: t.h, dir: t.dir };
+    }));
+    return m;
+  }
+
+  // ---------- сравнение ----------
+  async function comparePair(nA, nB, keep) {
+    var dpi = +$('dpi').value, tol = +$('tol').value;
+    var pA = await docs.A.pdf.getPage(nA), pB = await docs.B.pdf.getPage(nB);
+    var vA = pA.getViewport({ scale: 1 }), vB = pB.getViewport({ scale: 1 });
+    var maxPt = Math.max(vA.width, vA.height, vB.width, vB.height);
+    var scale = Math.min(dpi / 72, MAXSIDE / maxPt);
+    var rA = await renderPage(docs.A.pdf, nA, scale), rB = await renderPage(docs.B.pdf, nB, scale);
+    var mA = CMP.inkMask(rA.canvas.getContext('2d').getImageData(0, 0, rA.w, rA.h).data, rA.w, rA.h);
+    var mB = CMP.inkMask(rB.canvas.getContext('2d').getImageData(0, 0, rB.w, rB.h).data, rB.w, rB.h);
+    var al = CMP.align(mA, rA.w, rA.h, mB, rB.w, rB.h);
+    var res = { nA: nA, nB: nB, scale: scale, tolPx: Math.max(1, Math.round(tol * scale / (150 / 72))), rA: rA, rB: rB, mA: mA, mB: mB, al: al, dx: al.dx, dy: al.dy };
+    compute(res);
+    if (!keep) { res.rA = res.rB = res.mA = res.mB = null; res.d = null; }
+    return res;
+  }
+
+  function compute(res) {
+    var d = CMP.diff(res.mA, res.rA.w, res.rA.h, res.mB, res.rB.w, res.rB.h, res.dx, res.dy, res.tolPx);
+    res.d = d;
+    var cell = Math.max(6, Math.round(res.scale * 2.4));
+    res.regions = CMP.regions(d, { cell: cell, minPix: Math.max(3, Math.round(res.scale)), gap: 2, minRegion: Math.max(10, Math.round(res.scale * res.scale * 2)) });
+    var A = prepItems(res.rA.items, d.ax, d.ay), B = prepItems(res.rB.items, d.bx, d.by);
+    var mm = res.scale * 72 / 25.4;
+    res.text = CMP.textDiff(A, B, 1.5 * mm, 12 * mm);
+    res.hasText = A.length + B.length > 0;
+  }
+
+  // ---------- полотна для просмотра ----------
+  function buildCanvases(res) {
+    var d = res.d, W = d.W, H = d.H;
+    function blank() { var c = document.createElement('canvas'); c.width = W; c.height = H; var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, W, H); return c; }
+    var cA = blank(); cA.getContext('2d').drawImage(res.rA.canvas, d.ax, d.ay);
+    var cB = blank(); cB.getContext('2d').drawImage(res.rB.canvas, d.bx, d.by);
+    var cO = document.createElement('canvas'); cO.width = W; cO.height = H;
+    var ctx = cO.getContext('2d'), img = ctx.createImageData(W, H), p = img.data, code = d.code;
+    // изменения утолщаются, чтобы тонкие линии были видны на уменьшенном листе
+    var r = Math.max(1, Math.round(res.scale / 2.5)), mr = new Uint8Array(W * H), ma = new Uint8Array(W * H), i;
+    for (i = 0; i < code.length; i++) { if (code[i] === 2) mr[i] = 1; else if (code[i] === 3) ma[i] = 1; }
+    mr = CMP.dilate(mr, W, H, r); ma = CMP.dilate(ma, W, H, r);
+    for (i = 0; i < code.length; i++) {
+      var j = i * 4, c = code[i];
+      if (ma[i] && c !== 2) { p[j] = 10; p[j + 1] = 140; p[j + 2] = 60; }
+      else if (mr[i]) { p[j] = 211; p[j + 1] = 32; p[j + 2] = 32; }
+      else if (c === 1) { p[j] = 160; p[j + 1] = 165; p[j + 2] = 172; }
+      else { p[j] = p[j + 1] = p[j + 2] = 255; }
+      p[j + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    res.cv = { a: cA, b: cB, o: cO };
+  }
+
+  // ---------- просмотр ----------
+  var cv = $('cv'), vw = $('view');
+  function sizeCanvas() {
+    var dpr = window.devicePixelRatio || 1, r = vw.getBoundingClientRect();
+    cv.width = Math.max(1, Math.round(r.width * dpr)); cv.height = Math.max(1, Math.round(r.height * dpr));
+  }
+  function fit() {
+    if (!cur) return; sizeCanvas();
+    var s = Math.min(cv.width / cur.d.W, cv.height / cur.d.H) * 0.98;
+    view.scale = s; view.px = (cur.d.W - cv.width / s) / 2; view.py = (cur.d.H - cv.height / s) / 2;
+    draw();
+  }
+  function draw() {
+    if (!cur || !cur.cv) return;
+    var ctx = cv.getContext('2d'), s = view.scale;
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#e9e7e1'; ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.setTransform(s, 0, 0, s, -view.px * s, -view.py * s);
+    ctx.imageSmoothingEnabled = s < 1; ctx.imageSmoothingQuality = 'high';
+    var W = cur.d.W, H = cur.d.H;
+    if (view.mode === 'swipe') {
+      var x = W * (+$('swipe').value / 1000);
+      ctx.drawImage(cur.cv.a, 0, 0);
+      ctx.save(); ctx.beginPath(); ctx.rect(x, 0, W - x, H); ctx.clip(); ctx.drawImage(cur.cv.b, 0, 0); ctx.restore();
+      ctx.strokeStyle = '#ff9800'; ctx.lineWidth = 2 * (window.devicePixelRatio || 1) / s; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    } else {
+      ctx.drawImage(view.mode === 'a' ? cur.cv.a : view.mode === 'b' ? cur.cv.b : cur.cv.o, 0, 0);
+    }
+    if ($('boxes').checked && (view.mode === 'overlay' || view.mode === 'swipe')) {
+      var k = (window.devicePixelRatio || 1) / s, pad = 5 * k;
+      ctx.font = 600 + ' ' + (12 * k) + 'px "Segoe UI", sans-serif'; ctx.textBaseline = 'bottom';
+      cur.regions.forEach(function (r) {
+        var on = view.sel === r.n;
+        ctx.strokeStyle = on ? '#ff9800' : 'rgba(255,152,0,.8)'; ctx.lineWidth = (on ? 2.5 : 1.5) * k;
+        ctx.strokeRect(r.x0 - pad, r.y0 - pad, r.x1 - r.x0 + 2 * pad, r.y1 - r.y0 + 2 * pad);
+        var label = String(r.n), tw = ctx.measureText(label).width + 8 * k;
+        ctx.fillStyle = '#ff9800'; ctx.fillRect(r.x0 - pad, r.y0 - pad - 16 * k, tw, 16 * k);
+        ctx.fillStyle = '#fff'; ctx.fillText(label, r.x0 - pad + 4 * k, r.y0 - pad - 2 * k);
+      });
+    }
+  }
+  function zoomAt(f, sx, sy) {
+    var s = view.scale, ns = Math.min(8, Math.max(0.02, s * f));
+    var ix = view.px + sx / s, iy = view.py + sy / s;
+    view.scale = ns; view.px = ix - sx / ns; view.py = iy - sy / ns; draw();
+  }
+  function zoomTo(x0, y0, x1, y1) {
+    sizeCanvas();
+    var w = Math.max(x1 - x0, 1), h = Math.max(y1 - y0, 1), m = Math.max(w, h) * 0.6 + 40 / view.scale;
+    var s = Math.min(cv.width / (w + 2 * m), cv.height / (h + 2 * m), 4);
+    view.scale = s; view.px = (x0 + x1) / 2 - cv.width / s / 2; view.py = (y0 + y1) / 2 - cv.height / s / 2; draw();
+  }
+  vw.addEventListener('wheel', function (e) {
+    if (!cur) return; e.preventDefault();
+    var r = vw.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    zoomAt(e.deltaY < 0 ? 1.2 : 1 / 1.2, (e.clientX - r.left) * dpr, (e.clientY - r.top) * dpr);
+  }, { passive: false });
+  var dragging = null;
+  vw.addEventListener('pointerdown', function (e) { if (!cur) return; dragging = { x: e.clientX, y: e.clientY, px: view.px, py: view.py }; vw.classList.add('drag'); vw.setPointerCapture(e.pointerId); });
+  vw.addEventListener('pointermove', function (e) {
+    if (!dragging) return; var dpr = window.devicePixelRatio || 1;
+    view.px = dragging.px - (e.clientX - dragging.x) * dpr / view.scale; view.py = dragging.py - (e.clientY - dragging.y) * dpr / view.scale; draw();
+  });
+  function endDrag() { dragging = null; vw.classList.remove('drag'); }
+  vw.addEventListener('pointerup', endDrag); vw.addEventListener('pointercancel', endDrag);
+  vw.addEventListener('dblclick', fit);
+  window.addEventListener('resize', function () { if (cur) { var s = view.scale; sizeCanvas(); draw(); } });
+  $('fit').addEventListener('click', fit);
+  $('zin').addEventListener('click', function () { zoomAt(1.4, cv.width / 2, cv.height / 2); });
+  $('zout').addEventListener('click', function () { zoomAt(1 / 1.4, cv.width / 2, cv.height / 2); });
+  $('boxes').addEventListener('change', draw);
+  $('swipe').addEventListener('input', draw);
+  Array.prototype.forEach.call(document.querySelectorAll('[data-mode]'), function (b) {
+    b.addEventListener('click', function () {
+      view.mode = b.getAttribute('data-mode');
+      Array.prototype.forEach.call(document.querySelectorAll('[data-mode]'), function (x) { x.classList.toggle('on', x === b); });
+      $('swipeRow').hidden = view.mode !== 'swipe'; draw();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-nudge]'), function (b) {
+    b.addEventListener('click', function () {
+      if (!cur) return;
+      var v = b.getAttribute('data-nudge').split(',').map(Number), step = Math.max(1, Math.round(cur.scale / 2));
+      cur.dx += v[0] * step; cur.dy += v[1] * step;
+      compute(cur); buildCanvases(cur); show(cur, true);
+    });
+  });
+
+  // ---------- вывод результата ----------
+  function mmTxt(px, res) { return (px / (res.scale * 72 / 25.4)).toFixed(1).replace('.', ','); }
+  function show(res, keepView) {
+    cur = res; view.sel = 0;
+    $('res').hidden = false;
+    var t = res.text, nT = t.changed.length + t.removed.length + t.added.length;
+    var sum = $('sum'); sum.hidden = false; sum.innerHTML = '';
+    var nm = docs.A.name === docs.B.name ? '' : '';
+    sum.appendChild(document.createTextNode('Лист ' + res.nA + ' ↔ ' + res.nB + ': '));
+    if (!res.regions.length && !nT) { var ok = el('b', '', 'отличий не найдено'); ok.style.color = 'var(--ok)'; sum.appendChild(ok); sum.appendChild(document.createTextNode('.')); }
+    else {
+      sum.appendChild(el('b', '', String(res.regions.length))); sum.appendChild(document.createTextNode(' ' + plural(res.regions.length, 'область', 'области', 'областей') + ' с изменениями графики'));
+      if (res.hasText) { sum.appendChild(document.createTextNode(', ')); sum.appendChild(el('b', '', String(nT))); sum.appendChild(document.createTextNode(' ' + plural(nT, 'изменение', 'изменения', 'изменений') + ' текста')); }
+      sum.appendChild(document.createTextNode('.'));
+    }
+    if (!res.hasText) sum.appendChild(document.createTextNode(' В PDF нет текстового слоя — сравнение только по изображению.'));
+    var how = { frame: 'по рамке (основной надписи)', 'frame-tl': 'по рамке', page: 'по листу', corner: 'по углу листа' }[res.al.method] || '';
+    $('shiftInfo').textContent = 'совмещено ' + how + ', сдвиг ' + mmTxt(res.dx, res) + '; ' + mmTxt(res.dy, res) + ' мм';
+    renderList(res);
+    $('save').disabled = false;
+    if (!keepView) fit(); else draw();
+  }
+  function plural(n, a, b, c) { var m = n % 10, h = n % 100; return m === 1 && h !== 11 ? a : m >= 2 && m <= 4 && (h < 12 || h > 14) ? b : c; }
+
+  function renderList(res) {
+    var list = $('list'); list.innerHTML = '';
+    var kinds = { added: 'добавлено', removed: 'убрано', changed: 'изменено' };
+    function sec(title) { var h = el('h3', '', title); list.appendChild(h); }
+    sec('Графика: ' + res.regions.length);
+    if (!res.regions.length) list.appendChild(el('div', 'none', 'Изменений графики нет'));
+    res.regions.forEach(function (r) {
+      var b = el('button', 'item'); b.dataset.n = r.n;
+      b.appendChild(el('b', '', r.n + '. ')); b.appendChild(el('span', 'k ' + r.kind, kinds[r.kind]));
+      b.appendChild(document.createTextNode(' ' + mmTxt(r.x1 - r.x0, res) + '×' + mmTxt(r.y1 - r.y0, res) + ' мм'));
+      b.addEventListener('click', function () { view.sel = r.n; markSel(); zoomTo(r.x0, r.y0, r.x1, r.y1); });
+      list.appendChild(b);
+    });
+    if (res.hasText) {
+      var t = res.text, all = [];
+      t.changed.forEach(function (c) { all.push({ k: 'changed', a: c.a, b: c.b, html: [['del', c.from], ['', ' → '], ['ins', c.to]] }); });
+      t.removed.forEach(function (c) { all.push({ k: 'removed', a: c, html: [['del', c.s]] }); });
+      t.added.forEach(function (c) { all.push({ k: 'added', b: c, html: [['ins', c.s]] }); });
+      all.sort(function (p, q) { var P = p.a || p.b, Q = q.a || q.b; return P.cy - Q.cy || P.cx - Q.cx; });
+      sec('Текст: ' + all.length);
+      if (!all.length) list.appendChild(el('div', 'none', 'Изменений текста нет'));
+      all.forEach(function (c) {
+        var b = el('button', 'item');
+        b.appendChild(el('span', 'k ' + c.k, kinds[c.k]));
+        c.html.forEach(function (h) { b.appendChild(h[0] ? el(h[0], '', h[1]) : document.createTextNode(h[1])); });
+        var p = c.a || c.b, q = c.b || c.a;
+        b.addEventListener('click', function () {
+          view.sel = 0; markSel();
+          var x0 = Math.min(p.x, q.x), x1 = Math.max(p.x + p.w, q.x + q.w), y0 = Math.min(p.cy, q.cy) - p.h, y1 = Math.max(p.cy, q.cy) + p.h;
+          zoomTo(x0, y0, x1, y1);
+        });
+        list.appendChild(b);
+      });
+      if (t.moved.length) {
+        sec('Перемещено: ' + t.moved.length);
+        t.moved.forEach(function (m) {
+          var b = el('button', 'item', '«' + m.s + '»');
+          b.addEventListener('click', function () { zoomTo(Math.min(m.from.x, m.to.x), Math.min(m.from.cy, m.to.cy) - m.from.h, Math.max(m.from.x + m.from.w, m.to.x + m.to.w), Math.max(m.from.cy, m.to.cy) + m.from.h); });
+          list.appendChild(b);
+        });
+      }
+    }
+  }
+  function markSel() { Array.prototype.forEach.call(document.querySelectorAll('.item[data-n]'), function (b) { b.classList.toggle('sel', +b.dataset.n === view.sel); }); }
+
+  // ---------- запуск ----------
+  var busy = false;
+  async function run() {
+    if (busy || !docs.A || !docs.B) return;
+    busy = true; $('run').disabled = true; $('save').disabled = true;
+    $('status').textContent = 'Сравниваю…';
+    await new Promise(function (r) { setTimeout(r, 30); });
+    try {
+      var t0 = performance.now();
+      var res = await comparePair(+$('pgA').value || 1, +$('pgB').value || 1, true);
+      buildCanvases(res);
+      show(res);
+      $('status').textContent = 'Готово за ' + ((performance.now() - t0) / 1000).toFixed(1).replace('.', ',') + ' с.';
+    } catch (e) {
+      console.error(e); $('status').textContent = 'Ошибка: ' + (e && e.message || e);
+    }
+    busy = false; $('run').disabled = false;
+  }
+  $('run').addEventListener('click', run);
+  $('tol').addEventListener('change', function () { if (cur && cur.mA) { cur.tolPx = Math.max(1, Math.round(+$('tol').value * cur.scale / (150 / 72))); compute(cur); buildCanvases(cur); show(cur, true); } });
+  $('dpi').addEventListener('change', function () { if (cur) run(); });
+
+  $('all').addEventListener('click', async function () {
+    if (busy) return; busy = true; $('all').disabled = true; $('run').disabled = true;
+    var n = Math.min(docs.A.n, docs.B.n), tb = $('allTable').tBodies[0]; tb.innerHTML = '';
+    $('allPanel').hidden = false;
+    for (var i = 1; i <= n; i++) {
+      $('status').textContent = 'Лист ' + i + ' из ' + n + '…';
+      await new Promise(function (r) { setTimeout(r, 10); });
+      try {
+        var r = await comparePair(i, i, false), t = r.text, nT = t.changed.length + t.removed.length + t.added.length;
+        var tr = el('tr', 'click'); tr.appendChild(el('td', '', String(i))); tr.appendChild(el('td', '', String(r.regions.length))); tr.appendChild(el('td', '', r.hasText ? String(nT) : '—'));
+        if (!r.regions.length && !nT) tr.style.color = 'var(--muted)';
+        (function (k) { tr.addEventListener('click', function () { $('pgA').value = k; $('pgB').value = k; run(); }); })(i);
+        tb.appendChild(tr);
+      } catch (e) { var tr2 = el('tr'); tr2.appendChild(el('td', '', String(i))); var td = el('td', '', 'ошибка'); td.colSpan = 2; tr2.appendChild(td); tb.appendChild(tr2); }
+    }
+    if (docs.A.n !== docs.B.n) { var tr3 = el('tr'); var td3 = el('td', '', 'Число листов разное: было ' + docs.A.n + ', стало ' + docs.B.n + '. Сравнены первые ' + n + '.'); td3.colSpan = 3; tr3.appendChild(td3); tb.appendChild(tr3); }
+    $('status').textContent = 'Листы сравнены. Нажмите на строку, чтобы открыть лист.';
+    busy = false; $('all').disabled = false; $('run').disabled = false;
+  });
+
+  // ---------- сохранение ----------
+  $('save').addEventListener('click', function () {
+    if (!cur || !cur.cv) return;
+    var src = cur.cv.o, c = document.createElement('canvas'); c.width = src.width; c.height = src.height;
+    var ctx = c.getContext('2d'); ctx.drawImage(src, 0, 0);
+    var pad = 6, fs = Math.max(14, Math.round(cur.scale * 6));
+    ctx.font = fs + 'px sans-serif'; ctx.textBaseline = 'bottom';
+    cur.regions.forEach(function (r) {
+      ctx.strokeStyle = '#ff9800'; ctx.lineWidth = Math.max(2, cur.scale / 1.2);
+      ctx.strokeRect(r.x0 - pad, r.y0 - pad, r.x1 - r.x0 + 2 * pad, r.y1 - r.y0 + 2 * pad);
+      ctx.fillStyle = '#ff9800'; var tw = ctx.measureText(String(r.n)).width + 8;
+      ctx.fillRect(r.x0 - pad, r.y0 - pad - fs - 4, tw, fs + 4); ctx.fillStyle = '#fff'; ctx.fillText(String(r.n), r.x0 - pad + 4, r.y0 - pad - 2);
+    });
+    c.toBlob(function (blob) {
+      var a = document.createElement('a'), base = docs.B.name.replace(/\.pdf$/i, '');
+      a.href = URL.createObjectURL(blob); a.download = 'сравнение ' + base + ' лист ' + cur.nB + '.png';
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+    }, 'image/png');
+  });
+  // ---------- режим BOM ----------
+  function setMode(m) {
+    $('modePdf').hidden = m !== 'pdf'; $('modeBom').hidden = m !== 'bom';
+    $('modeBtnPdf').classList.toggle('on', m === 'pdf'); $('modeBtnBom').classList.toggle('on', m === 'bom');
+    if (m === 'pdf' && cur) fit();
+  }
+  $('modeBtnPdf').addEventListener('click', function () { setMode('pdf'); });
+  $('modeBtnBom').addEventListener('click', function () { setMode('bom'); });
+  var boms = { A: null, B: null }, bomRes = null;
+  function setupBomDrop(k) {
+    var drop = $('bdrop' + k), pick = $('bpick' + k);
+    drop.addEventListener('click', function () { pick.click(); });
+    drop.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick.click(); } });
+    pick.addEventListener('change', function () { if (pick.files[0]) loadBom(k, pick.files[0]); pick.value = ''; });
+    drop.addEventListener('dragover', function (e) { e.preventDefault(); drop.classList.add('over'); });
+    drop.addEventListener('dragleave', function () { drop.classList.remove('over'); });
+    drop.addEventListener('drop', function (e) {
+      e.preventDefault(); drop.classList.remove('over');
+      var fs = e.dataTransfer.files;
+      if (fs.length >= 2 && !boms.A && !boms.B) { loadBom('A', fs[0]); loadBom('B', fs[1]); return; }
+      if (fs[0]) loadBom(k, fs[0]);
+    });
+  }
+  setupBomDrop('A'); setupBomDrop('B');
+  async function loadBom(k, file) {
+    try {
+      var wb = XLSX.read(new Uint8Array(await file.arrayBuffer()), { type: 'array' });
+      var rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: false, defval: '', blankrows: true });
+      var info = PE.detect(rows);
+      if (!info) { boms[k] = null; $('bname' + k).textContent = file.name + ': не найдена колонка позиционных обозначений'; $('bdrop' + k).classList.remove('filled'); return; }
+      boms[k] = { name: file.name, rows: rows, info: info };
+      $('bname' + k).textContent = file.name + ' · строк: ' + (rows.length - info.headerRow - 1);
+      $('bdrop' + k).classList.add('filled');
+    } catch (e) { boms[k] = null; $('bname' + k).textContent = 'Не удалось прочитать: ' + (e && e.message || e); }
+    if (boms.A && boms.B) runBom();
+  }
+  function cell(tag, text, cls) { var e = el(tag, cls || '', text); return e; }
+  function runBom() {
+    var A = BOMCMP.load(boms.A.rows, boms.A.info, PE), B = BOMCMP.load(boms.B.rows, boms.B.info, PE);
+    var r = BOMCMP.compare(A, B); bomRes = r;
+    var out = $('bomOut'); out.innerHTML = ''; out.hidden = false;
+    var sec = el('div', 'bsec');
+    var s = el('p', 'summary');
+    s.appendChild(document.createTextNode('Добавлено: ')); s.appendChild(el('b', '', String(r.added.length)));
+    s.appendChild(document.createTextNode(' · удалено: ')); s.appendChild(el('b', '', String(r.removed.length)));
+    s.appendChild(document.createTextNode(' · изменено: ')); s.appendChild(el('b', '', String(r.changed.length)));
+    s.appendChild(document.createTextNode(' · без изменений: ' + r.same + '.'));
+    sec.appendChild(s);
+    var notes = A.warnings.map(function (w) { return 'Было: ' + w; }).concat(B.warnings.map(function (w) { return 'Стало: ' + w; }));
+    if (r.onlyA.length || r.onlyB.length) notes.push('Колонки есть только в одном файле и не сравниваются: ' + r.onlyA.concat(r.onlyB).join(', ') + '.');
+    if (!r.common.length) notes.push('Общих колонок нет — сравнивается только наименование.');
+    else notes.push('Сравниваются колонки: ' + r.common.join(', ') + '.');
+    notes.forEach(function (n) { sec.appendChild(el('div', 'mapline', n)); });
+    function table(title, head, rows) {
+      sec.appendChild(el('h3', '', title));
+      if (!rows.length) { sec.appendChild(el('div', 'mapline', 'нет')); return; }
+      var t = el('table', 'bt'), tr = el('tr'); head.forEach(function (h) { tr.appendChild(el('th', '', h)); }); t.appendChild(tr);
+      rows.forEach(function (rw) { var tr2 = el('tr'); rw.forEach(function (c, i) { var td = el('td', i === 0 ? 'd' : ''); if (c && c.nodeType) td.appendChild(c); else td.textContent = c == null ? '' : String(c); tr2.appendChild(td); }); t.appendChild(tr2); });
+      sec.appendChild(t);
+    }
+    function diffNode(d) {
+      var f = document.createDocumentFragment();
+      d.forEach(function (x, i) {
+        if (i) f.appendChild(document.createTextNode('; '));
+        f.appendChild(document.createTextNode(x.col + ': ')); f.appendChild(el('del', '', x.from || '—'));
+        f.appendChild(document.createTextNode(' → ')); f.appendChild(el('ins', '', x.to || '—'));
+      });
+      return f;
+    }
+    table('Изменены', ['Поз.', 'Что изменилось'], r.changed.map(function (c) { return [c.des, diffNode(c.diffs)]; }));
+    table('Добавлены', ['Поз.', 'Компонент'], r.added.map(function (c) { return [c.des, c.key]; }));
+    table('Удалены', ['Поз.', 'Компонент'], r.removed.map(function (c) { return [c.des, c.key]; }));
+    table('Количество одинаковых компонентов', ['Было → стало', 'Компонент'], r.qty.map(function (q) { return [q.from + ' → ' + q.to, q.key]; }));
+    out.appendChild(sec);
+    $('bomXls').disabled = false;
+    $('bomStatus').textContent = r.added.length + r.removed.length + r.changed.length ? '' : 'Отличий нет.';
+  }
+  $('bomXls').addEventListener('click', function () {
+    if (!bomRes) return;
+    var sh = BOMCMP.sheets(bomRes), wb = XLSX.utils.book_new();
+    var w1 = XLSX.utils.aoa_to_sheet(sh.positions); w1['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 36 }, { wch: 36 }, { wch: 60 }];
+    var w2 = XLSX.utils.aoa_to_sheet(sh.quantity); w2['!cols'] = [{ wch: 50 }, { wch: 10 }, { wch: 10 }, { wch: 10 }];
+    XLSX.utils.book_append_sheet(wb, w1, 'По позициям'); XLSX.utils.book_append_sheet(wb, w2, 'По количеству');
+    XLSX.writeFile(wb, 'сравнение BOM ' + boms.B.name.replace(/\.[^.]+$/, '') + '.xlsx');
+  });
+})();
+</script>
+</body>
+</html>

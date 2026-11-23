@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Рамка и основная надпись по ЕСКД для чертежа</title>
+<style>
+  :root {
+    --bg: #f6f5f1; --card: #ffffff; --ink: #1d2126; --muted: #626a73; --line: #dedbd2;
+    --accent: #1f5fa8; --err: #b3261e; --errbg: #fbe9e7; --warn: #8a5a00; --warnbg: #fdf1d6;
+    --note: #3d5a80; --notebg: #e6eef7; --ok: #1e6b3a; --okbg: #e3f3e8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #15181c; --card: #1e2227; --ink: #e8eaed; --muted: #9aa3ad; --line: #32383f;
+      --accent: #7fb2ee; --err: #ff8a80; --errbg: #3a1d1b; --warn: #f2c261; --warnbg: #3a2f14;
+      --note: #9fc1e8; --notebg: #1c2a3a; --ok: #7fd49b; --okbg: #17301f;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; }
+  main { max-width: 1240px; margin: 0 auto; padding: 28px 20px 60px; }
+  header h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  header p { margin: 0; color: var(--muted); }
+  .privacy { margin: 16px 0 0; padding: 10px 14px; border-left: 3px solid var(--ok); background: var(--okbg); border-radius: 0 6px 6px 0; font-size: 14px; }
+  .grid { display: grid; grid-template-columns: minmax(330px, 420px) 1fr; gap: 20px; margin-top: 20px; align-items: start; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
+  .card h2 { font-size: 16px; margin: 0 0 10px; }
+  .step { color: var(--muted); font-weight: 600; margin-right: 6px; }
+  .drop { border: 2px dashed var(--line); border-radius: 8px; padding: 20px 14px; text-align: center; cursor: pointer; }
+  .drop:hover, .drop.over, .drop:focus-visible { border-color: var(--accent); outline: none; }
+  .drop strong { display: block; }
+  .drop span { color: var(--muted); font-size: 13px; }
+  .file { margin-top: 8px; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+  label.f { display: block; font-size: 13px; color: var(--muted); margin: 8px 0 2px; }
+  input[type=text], input[type=number], textarea { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); }
+  textarea { resize: vertical; min-height: 54px; }
+  input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+  .sign { display: grid; grid-template-columns: 96px 1fr; gap: 6px 8px; align-items: center; margin-top: 6px; }
+  .sign input.lbl { color: var(--muted); }
+  .lit { display: flex; gap: 6px; }
+  .lit input { width: 52px; text-align: center; }
+  .chk { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; margin: 6px 0; }
+  .num { display: flex; gap: 8px; align-items: center; font-size: 14px; margin: 6px 0; }
+  .num input { width: 64px; }
+  button { font: inherit; padding: 8px 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  @media (prefers-color-scheme: dark) { button.primary { color: #10161d; } }
+  button:disabled { opacity: .5; cursor: default; }
+  .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+  #status { color: var(--muted); font-size: 14px; }
+  .preview { width: 100%; height: 1000px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .empty { height: 300px; display: flex; align-items: center; justify-content: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 10px; text-align: center; padding: 20px; }
+  .w { display: grid; grid-template-columns: 92px 1fr; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .w:first-of-type { border-top: 0; }
+  .chip { font-size: 12px; padding: 2px 8px; border-radius: 999px; font-weight: 600; justify-self: start; white-space: nowrap; }
+  .chip.err { color: var(--err); background: var(--errbg); } .chip.warn { color: var(--warn); background: var(--warnbg); } .chip.note { color: var(--note); background: var(--notebg); }
+  .muted { color: var(--muted); font-size: 13px; }
+  .foot { color: var(--muted); font-size: 13px; margin-top: 26px; }
+  table.cols { border-collapse: collapse; font-size: 13px; margin: 6px 0; width: 100%; }
+  select.sel { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); }
+  .radio { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; margin: 4px 0; }
+  .ul-item { border-top: 1px solid var(--line); padding: 8px 0; }
+  .ul-item:first-of-type { border-top: 0; }
+  .ul-item .hdr { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+  .ul-item .g3 { display: grid; grid-template-columns: 1.4fr .5fr; gap: 6px; margin-top: 4px; }
+  .ul-item .hash { font: 12px/1.4 ui-monospace, Consolas, monospace; overflow-wrap: anywhere; color: var(--muted); margin-top: 4px; }
+  .ul-item button.x { padding: 0 8px; font-size: 13px; }
+  table.cols td { border-bottom: 1px solid var(--line); padding: 3px 8px 3px 0; vertical-align: top; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Рамка и основная надпись для чертежа</h1>
+    <p>Изображение или страница PDF помещается на лист с рамкой, дополнительными графами и основной надписью по ГОСТ Р 2.104 (форма 1). Прототип, версия <span id="ver"></span>.</p>
+  </header>
+  <p class="privacy">Файл обрабатывается в вашем браузере и никуда не отправляется. Страница работает без интернета.</p>
+
+  <div class="grid">
+    <div>
+      <section class="card">
+        <h2><span class="step">1</span>Изображение</h2>
+        <div class="drop" id="drop" tabindex="0" role="button" aria-label="Выбрать файл изображения">
+          <strong>Перетащите сюда файл или нажмите, чтобы выбрать</strong>
+          <span>PDF (вставляется вектором, без потери качества), PNG, JPG, WEBP, GIF, BMP, SVG</span>
+          <input type="file" id="pick" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.bmp,.svg,image/*,application/pdf" hidden>
+        </div>
+        <div class="file" id="fname"></div>
+        <div class="num" id="pdfPageRow" hidden><span>Страница PDF</span><input type="number" id="pdfPage" min="1" value="1"><span id="pdfPages" class="muted"></span></div>
+        <p class="muted" style="margin:8px 0 0">Файлы DWG и DXF напрямую не читаются: сохраните чертёж из САПР в PDF.</p>
+      </section>
+
+      <section class="card">
+        <h2><span class="step">2</span>Реквизиты основной надписи</h2>
+        <label class="f" for="desig">Обозначение документа</label>
+        <input type="text" id="desig" placeholder="АБВГ.123456.001 СБ">
+        <label class="f" for="name">Наименование изделия</label>
+        <textarea id="name" rows="2" placeholder="Корпус"></textarea>
+        <label class="f" for="kind">Наименование документа (для деталей не пишут)</label>
+        <input type="text" id="kind" list="kinds" placeholder="Сборочный чертеж">
+        <datalist id="kinds"><option value="Сборочный чертеж"><option value="Габаритный чертеж"><option value="Монтажный чертеж"><option value="Чертеж общего вида"><option value="Упаковочный чертеж"><option value="Схема электрическая принципиальная"><option value="Схема электрическая соединений"></datalist>
+        <label class="f" for="material">Материал (графа 3, для деталей)</label>
+        <input type="text" id="material" placeholder="Сталь 08кп ГОСТ 1050-2013">
+        <div class="row2">
+          <div><label class="f" for="mass">Масса</label><input type="text" id="mass" placeholder="0,12"></div>
+          <div><label class="f" for="scale">Масштаб</label><input type="text" id="scale" placeholder="1:1"></div>
+        </div>
+        <div class="row2">
+          <div><label class="f">Литера</label><div class="lit"><input type="text" id="lit1" maxlength="3" aria-label="Литера 1"><input type="text" id="lit2" maxlength="3" aria-label="Литера 2"><input type="text" id="lit3" maxlength="3" aria-label="Литера 3"></div></div>
+          <div><label class="f" for="sheets">Листов в документе</label><input type="number" id="sheets" min="1" value="1"></div>
+        </div>
+        <label class="f" for="org">Организация</label>
+        <input type="text" id="org" placeholder="ООО «Пример»">
+        <label class="f">Фамилии</label>
+        <div class="sign">
+          <input type="text" class="lbl" id="l1" value="Разраб." aria-label="Строка 1"><input type="text" id="razrab" aria-label="Разработал">
+          <input type="text" class="lbl" id="l2" value="Пров." aria-label="Строка 2"><input type="text" id="prov" aria-label="Проверил">
+          <input type="text" class="lbl" id="l3" value="Т.контр." aria-label="Строка 3"><input type="text" id="r3" aria-label="Строка 3, фамилия">
+          <input type="text" class="lbl" id="l4" value="Н. контр." aria-label="Строка 4"><input type="text" id="nkontr" aria-label="Нормоконтроль">
+          <input type="text" class="lbl" id="l5" value="Утв." aria-label="Строка 5"><input type="text" id="utv" aria-label="Утвердил">
+        </div>
+        <label class="f">Подписание</label>
+        <label class="radio"><input type="radio" name="smode" value="paper" checked><span>На бумаге — подписи ставят от руки</span></label>
+        <label class="radio"><input type="radio" name="smode" value="ep"><span>Электронная подпись — в графе «Подп.» пишется «ЭП» (ГОСТ Р 2.104-2023, прил. Г)</span></label>
+        <label class="radio"><input type="radio" name="smode" value="ul"><span>Удостоверяющий лист — под рамкой «Подписано с использованием УЛ», УЛ формируется отдельным PDF (ГОСТ Р 2.051-2023)</span></label>
+        <div class="row2">
+          <div><label class="f" for="sdate">Дата подписания</label><input type="text" id="sdate" placeholder="18.11.26"></div>
+          <div id="uldRow" hidden><label class="f" for="uld">Обозначение УЛ</label><input type="text" id="uld" placeholder="авто: обозначение-УЛ"></div>
+        </div>
+        <div class="row2">
+          <div><label class="f" for="perv">Перв. примен.</label><input type="text" id="perv"></div>
+          <div><label class="f" for="sprav">Справ. №</label><input type="text" id="sprav"></div>
+        </div>
+        <div class="row2">
+          <div><label class="f" for="inv">Инв. № подл.</label><input type="text" id="inv"></div>
+          <div><label class="f" for="ver2">Версия (графа «Вер.»)</label><input type="text" id="ver2"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2><span class="step">3</span>Лист</h2>
+        <label class="f" for="format">Формат</label>
+        <select id="format" style="width:100%;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)">
+          <option value="auto">Подобрать автоматически</option>
+          <option value="A4-P">А4, вертикально</option>
+          <option value="A3-L">А3, горизонтально</option><option value="A3-P">А3, вертикально</option>
+          <option value="A2-L">А2, горизонтально</option><option value="A2-P">А2, вертикально</option>
+          <option value="A1-L">А1, горизонтально</option><option value="A1-P">А1, вертикально</option>
+        </select>
+        <div class="num"><input type="number" id="margin" min="0" max="30" value="5"><span>мм — отступ изображения от рамки</span></div>
+        <label class="chk"><input type="checkbox" id="g26" checked><span>Графа 26 (обозначение, повёрнутое на 180°, в левом верхнем углу)</span></label>
+        <div class="num"><input type="number" id="dpi" min="50" max="1200" value="150"><span>точек на дюйм у картинки (для подбора формата)</span></div>
+      </section>
+      <section class="card" id="ulCard" hidden>
+        <h2><span class="step">4</span>Удостоверяющий лист</h2>
+        <p class="muted" style="margin:0 0 6px">Хэш-код считается по ГОСТ Р 34.11-2012 (256 бит) прямо в браузере. Чертёж с рамкой попадает в УЛ сам; можно добавить и другие файлы комплекта — любые форматы.</p>
+        <div id="ulList"></div>
+        <div class="bar" style="margin:8px 0 0">
+          <button id="ulAdd">Добавить файлы…</button>
+          <input type="file" id="ulPick" multiple hidden>
+        </div>
+        <label class="f" for="ulFree">Свободное поле (справочные данные ко всем документам)</label>
+        <textarea id="ulFree" rows="2"></textarea>
+        <p class="muted" style="margin:8px 0 0">Хэш-код относится к PDF в том виде, в каком он сейчас собран. Поменяли реквизиты — скачайте заново и чертёж, и УЛ. При тех же реквизитах файл получается побайтно тем же.</p>
+      </section>
+    </div>
+
+    <div>
+      <div class="bar">
+        <button class="primary" id="save" disabled>Скачать PDF</button>
+        <button id="saveUl" disabled hidden>Скачать УЛ (PDF)</button>
+        <span id="status"></span>
+      </div>
+      <div id="pv"><div class="empty">Загрузите изображение или PDF.<br>Предпросмотр листа появится здесь.</div></div>
+    </div>
+  </div>
+
+  <p class="foot">Основная надпись — ГОСТ Р 2.104-2023, форма 1 (для графических документов), с дополнительными графами 19–26. Форматы — ГОСТ 2.301.
+  Изображение вписывается в поле листа без искажения пропорций; масштаб в основной надписи укажите сами — инструмент его не вычисляет.
+  Графы 27–30 для государственного заказа не выводятся. Для электронных документов: при подписании ЭП в графе «Подп.» ставится «ЭП» (ГОСТ Р 2.104-2023, приложение Г); при подписании через удостоверяющий лист — отметка «Подписано с использованием УЛ», а сам УЛ (форма 1 по ГОСТ Р 2.051-2023, приложение А) с хэш-кодом по ГОСТ Р 34.11-2012 выдаётся отдельным PDF. Размеры граф УЛ стандарт оставляет на усмотрение организации. Шрифт DejaVu Sans Condensed (свободная лицензия). Перед выпуском документа проверьте результат.</p>
+</main>
+
+<script>/*__PDFLIB__*/</script>
+<script>/*__FONTKIT__*/</script>
+<script>var FONT_REG = '/*__FONT_REG__*/';</script>
+<script>/*__FRAME__*/</script>
+<script>/*__ESKDPDF__*/</script>
+<script>/*__GOST__*/</script>
+<script>/*__UL__*/</script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var FIELDS = ['desig', 'name', 'kind', 'material', 'mass', 'scale', 'lit1', 'lit2', 'lit3', 'sheets', 'org', 'l1', 'razrab', 'l2', 'prov', 'l3', 'r3', 'l4', 'nkontr', 'l5', 'utv', 'perv', 'sprav', 'inv', 'ver2', 'format', 'margin', 'g26', 'dpi', 'sdate', 'uld'];
+  var src = null, lastPdf = null, lastUrl = null, timer = null;
+  $('ver').textContent = FRAME.VERSION;
+  function b64(s) { var bin = atob(s), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+  var font = b64(FONT_REG);
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function store(save) {
+    try {
+      var keep = ['org', 'l1', 'razrab', 'l2', 'prov', 'l3', 'r3', 'l4', 'nkontr', 'l5', 'utv', 'lit1', 'lit2', 'lit3', 'margin', 'g26', 'dpi', 'ulFree'];
+      if (save) { var o = {}; keep.forEach(function (k) { var e = $(k); o[k] = e.type === 'checkbox' ? e.checked : e.value; }); o.smode = smode(); localStorage.setItem('eskd-frame-req', JSON.stringify(o)); }
+      else { var d = JSON.parse(localStorage.getItem('eskd-frame-req') || 'null'); if (d) { keep.forEach(function (k) { var e = $(k); if (d[k] === undefined) return; if (e.type === 'checkbox') e.checked = !!d[k]; else e.value = d[k]; }); if (d.smode) setMode(d.smode); } }
+    } catch (e) {}
+  }
+  function smode() { var r = document.querySelector('input[name=smode]:checked'); return r ? r.value : 'paper'; }
+  function setMode(m) { document.querySelectorAll('input[name=smode]').forEach(function (r) { r.checked = r.value === m; }); }
+  if (!$('ulFree').value) $('ulFree').value = 'Хэш-коды рассчитаны по ГОСТ Р 34.11-2012 (256 бит) для файлов в том виде, в каком они переданы.';
+  store(false);
+
+  function toPng(file) {
+    return new Promise(function (res, rej) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var w = img.naturalWidth || 1200, h = img.naturalHeight || 900;
+        if (/svg/i.test(file.type) || /\.svg$/i.test(file.name)) { var k = Math.max(1, 2400 / Math.max(w, h)); w = Math.round(w * k); h = Math.round(h * k); }
+        var c = document.createElement('canvas'); c.width = w; c.height = h;
+        var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        c.toBlob(function (b) { b.arrayBuffer().then(function (ab) { res(new Uint8Array(ab)); }); }, 'image/png');
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); rej(new Error('браузер не смог открыть это изображение')); };
+      img.src = url;
+    });
+  }
+
+  async function readFile(file) {
+    $('status').textContent = 'Читаю файл…';
+    try {
+      var bytes = new Uint8Array(await file.arrayBuffer()), kind;
+      var isPdf = bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46;
+      var isPng = bytes[0] === 0x89 && bytes[1] === 0x50, isJpg = bytes[0] === 0xFF && bytes[1] === 0xD8;
+      if (isPdf) {
+        var pd = await PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true });
+        var n = pd.getPageCount();
+        $('pdfPageRow').hidden = n < 2; $('pdfPage').max = n; $('pdfPage').value = 1; $('pdfPages').textContent = 'из ' + n;
+        src = { kind: 'pdf', bytes: bytes, pages: n };
+      } else if (isPng) { src = { kind: 'png', bytes: bytes }; $('pdfPageRow').hidden = true; }
+      else if (isJpg) { src = { kind: 'jpg', bytes: bytes }; $('pdfPageRow').hidden = true; }
+      else { src = { kind: 'png', bytes: await toPng(file) }; $('pdfPageRow').hidden = true; }
+      $('fname').textContent = 'Файл: ' + file.name + (src.kind === 'pdf' ? ' (PDF, вставляется вектором)' : '');
+      build();
+    } catch (e) { src = null; $('status').textContent = 'Не удалось прочитать файл: ' + (e && e.message ? e.message : e); }
+  }
+
+  function meta() {
+    var v = function (k) { return $(k).value.trim(); };
+    return { desig: v('desig'), name: v('name'), kind: v('kind'), material: v('material'), mass: v('mass'), scale: v('scale'), lit: [v('lit1'), v('lit2'), v('lit3')], sheets: v('sheets'),
+      org: v('org'), l1: v('l1'), razrab: v('razrab'), l2: v('l2'), prov: v('prov'), l3: v('l3'), r3: v('r3'), l4: v('l4'), nkontr: v('nkontr'), l5: v('l5'), utv: v('utv'),
+      pervPrimen: v('perv'), spravN: v('sprav'), invPodl: v('inv'), ver: v('ver2'),
+      signMode: smode(), signDate: v('sdate'), ulDesig: ulDesig() };
+  }
+  function ulDesig() { return $('uld').value.trim() || UL.ulDesig($('desig').value.trim()); }
+  function fileName() { return ($('desig').value.trim() || 'chertezh').replace(/[\\/:*?"<>|]/g, '_') + '.pdf'; }
+  function today() { var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; }; return p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
+
+  /* ---------- удостоверяющий лист ---------- */
+  var ulExtra = [], drawItem = { ver: '', name: '' }, drawHash = '';
+  function refreshMode() {
+    var m = smode();
+    $('ulCard').hidden = m !== 'ul'; $('uldRow').hidden = m !== 'ul'; $('saveUl').hidden = m !== 'ul';
+    $('uld').placeholder = 'авто: ' + (UL.ulDesig($('desig').value.trim()) || 'обозначение-УЛ');
+  }
+  function inputCell(val, ph, on, label) { var i = el('input'); i.type = 'text'; i.value = val || ''; i.placeholder = ph || ''; i.setAttribute('aria-label', label); i.addEventListener('input', function () { on(i.value); }); return i; }
+  function renderUl() {
+    var box = $('ulList'); box.textContent = '';
+    var d = el('div', 'ul-item'), h = el('div', 'hdr');
+    h.appendChild(el('span', '', '1. Чертёж с рамкой — ' + fileName()));
+    d.appendChild(h);
+    var g = el('div', 'g3');
+    g.appendChild(inputCell(drawItem.name, 'Наименование (авто)', function (v) { drawItem.name = v; }, 'Наименование документа в УЛ'));
+    g.appendChild(inputCell(drawItem.ver, 'Версия', function (v) { drawItem.ver = v; }, 'Версия документа'));
+    d.appendChild(g);
+    var hs = el('div', 'hash', drawHash ? 'Хэш-код: ' + drawHash : 'Хэш-код появится после загрузки изображения');
+    hs.id = 'drawHash'; d.appendChild(hs);
+    box.appendChild(d);
+    ulExtra.forEach(function (it, i) {
+      var r = el('div', 'ul-item'), hh = el('div', 'hdr');
+      hh.appendChild(el('span', '', (i + 2) + '. ' + it.file + ' · ' + it.size.toLocaleString('ru-RU') + ' байт'));
+      var x = el('button', 'x', '×'); x.title = 'Убрать из УЛ'; x.addEventListener('click', function () { ulExtra.splice(i, 1); renderUl(); });
+      hh.appendChild(x); r.appendChild(hh);
+      var g1 = el('div', 'g3');
+      g1.appendChild(inputCell(it.desig, 'Обозначение', function (v) { it.desig = v; }, 'Обозначение'));
+      g1.appendChild(inputCell(it.ver, 'Версия', function (v) { it.ver = v; }, 'Версия'));
+      r.appendChild(g1);
+      var nm = inputCell(it.name, 'Наименование документа', function (v) { it.name = v; }, 'Наименование'); nm.style.marginTop = '6px'; r.appendChild(nm);
+      r.appendChild(el('div', 'hash', 'Хэш-код: ' + it.hash));
+      box.appendChild(r);
+    });
+  }
+  async function addUlFiles(files) {
+    for (var i = 0; i < files.length; i++) {
+      var f = files[i];
+      $('status').textContent = 'Считаю хэш-код: ' + f.name + '…';
+      await new Promise(function (r) { setTimeout(r, 20); });
+      var bytes = new Uint8Array(await f.arrayBuffer());
+      var nm = UL.fromFileName(f.name);
+      var dt = f.lastModified ? new Date(f.lastModified) : null, p2 = function (n) { return (n < 10 ? '0' : '') + n; };
+      ulExtra.push({ desig: nm.desig, name: nm.name, ver: '', file: f.name, size: bytes.length, hash: GOST3411.hex256(bytes),
+        mtime: dt ? p2(dt.getDate()) + '.' + p2(dt.getMonth() + 1) + '.' + dt.getFullYear() + ' ' + p2(dt.getHours()) + ':' + p2(dt.getMinutes()) : '' });
+    }
+    $('status').textContent = 'Добавлено в УЛ файлов: ' + files.length;
+    renderUl();
+  }
+  $('ulAdd').addEventListener('click', function () { $('ulPick').click(); });
+  $('ulPick').addEventListener('change', function () { var fs = Array.prototype.slice.call($('ulPick').files); $('ulPick').value = ''; if (fs.length) addUlFiles(fs); });
+  document.querySelectorAll('input[name=smode]').forEach(function (r) { r.addEventListener('change', function () { refreshMode(); renderUl(); later(); }); });
+  $('desig').addEventListener('input', function () { refreshMode(); renderUl(); });
+  $('ulFree').addEventListener('input', function () { store(true); });
+  refreshMode(); renderUl();
+  $('saveUl').addEventListener('click', async function () {
+    if (!lastPdf) return;
+    var m = meta(), nameDoc = [m.name, m.kind].filter(Boolean).join('. ');
+    var items = [{ desig: m.desig, ver: drawItem.ver || m.ver, name: drawItem.name || nameDoc, hash: GOST3411.hex256(lastPdf), file: fileName(), size: lastPdf.length }].concat(ulExtra);
+    try {
+      var bytes = await UL.render(PDFLib, fontkit, font, ESKDPDF, items, Object.assign({}, m, { name: ulExtra.length ? '' : nameDoc, free: $('ulFree').value }));
+      var url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+      var a = el('a'); a.href = url; a.download = (m.ulDesig || 'UL').replace(/[\\/:*?"<>|]/g, '_') + '.pdf'; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    } catch (e) { $('status').textContent = 'Ошибка при сборке УЛ: ' + (e && e.message ? e.message : e); }
+  });
+
+  async function build() {
+    store(true);
+    if (!src) return;
+    $('status').textContent = 'Собираю…';
+    try {
+      var s = { kind: src.kind, bytes: src.bytes, page: Math.max(0, Math.min((src.pages || 1) - 1, (+$('pdfPage').value || 1) - 1)), dpi: +$('dpi').value || 150 };
+      var out = await FRAME.render(PDFLib, fontkit, font, s, meta(), { format: $('format').value, margin: +$('margin').value, graph26: $('g26').checked });
+      lastPdf = out.bytes;
+      if (lastUrl) URL.revokeObjectURL(lastUrl);
+      lastUrl = URL.createObjectURL(new Blob([out.bytes], { type: 'application/pdf' }));
+      var pv = $('pv'); pv.textContent = '';
+      var fr = el('iframe', 'preview'); fr.title = 'Предпросмотр листа'; fr.src = lastUrl + '#view=Fit'; pv.appendChild(fr);
+      $('save').disabled = false; $('saveUl').disabled = false;
+      if (smode() === 'ul') { drawHash = GOST3411.hex256(out.bytes); var dh = $('drawHash'); if (dh) dh.textContent = 'Хэш-код: ' + drawHash; }
+      var S = out.sheet;
+      $('status').textContent = 'Готово: формат ' + S.name + (S.orient === 'L' ? ', горизонтально' : ', вертикально') + ', изображение ' + Math.round(out.place.w) + '×' + Math.round(out.place.h) + ' мм.';
+      window.__frameLast = { fmt: S.name, orient: S.orient };
+    } catch (e) { $('status').textContent = 'Ошибка при сборке PDF: ' + (e && e.message ? e.message : e); }
+  }
+  function later() { clearTimeout(timer); timer = setTimeout(build, 400); }
+  FIELDS.concat(['pdfPage']).forEach(function (k) { var e = $(k); e.addEventListener(e.type === 'checkbox' || e.tagName === 'SELECT' ? 'change' : 'input', later); });
+
+  var drop = $('drop'), pick = $('pick');
+  drop.addEventListener('click', function () { pick.click(); });
+  drop.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick.click(); } });
+  pick.addEventListener('change', function () { if (pick.files[0]) readFile(pick.files[0]); pick.value = ''; });
+  ['dragenter', 'dragover'].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+  ['dragleave', 'drop'].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
+  drop.addEventListener('drop', function (e) { if (e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]); });
+  window.addEventListener('dragover', function (e) { e.preventDefault(); });
+  window.addEventListener('drop', function (e) { e.preventDefault(); });
+  $('save').addEventListener('click', function () {
+    if (!lastPdf) return;
+    var a = el('a'); a.href = lastUrl; a.download = fileName(); document.body.appendChild(a); a.click(); a.remove();
+  });
+  window.__frameBytes = function () { if (!lastPdf) return ''; var s = ''; for (var i = 0; i < lastPdf.length; i++) s += String.fromCharCode(lastPdf[i]); return btoa(s); };
+})();
+</script>
+</body>
+</html>
