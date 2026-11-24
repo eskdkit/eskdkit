@@ -9,7 +9,8 @@
   // Форматы (мм): W×H листа, рамка 20 слева и 5 с остальных сторон
   var FORMATS = {
     'A4': { W: 210, H: 297, name: 'А4' },
-    'A3L': { W: 420, H: 297, name: 'А3' }
+    'A3L': { W: 420, H: 297, name: 'А3' },
+    'A4L': { W: 297, H: 210, name: 'А4' }
   };
   function fmt(key) { var f = FORMATS[key]; return { W: f.W, H: f.H, name: f.name, fx0: 20, fx1: f.W - 5, fy0: 5, fy1: f.H - 5 }; }
 

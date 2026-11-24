@@ -13,6 +13,14 @@
     :root { --bg: #15181c; --card: #1e2227; --ink: #e8eaed; --muted: #9aa3ad; --line: #32383f; --accent: #7fb2ee; --ok: #7fd49b; --okbg: #17301f; --rem: #ff8a80; --add: #6fdc95; }
   }
   * { box-sizing: border-box; }
+  .ii { margin-top: 18px; padding: 14px 16px; }
+  .ii h2 { margin: 0 0 4px; font-size: 18px; }
+  .iigrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px 14px; margin: 8px 0; }
+  .iigrid label { display: flex; flex-direction: column; font-size: 13px; color: var(--muted); gap: 3px; }
+  .iigrid input, .iigrid select { font: inherit; font-size: 14px; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; }
+  .iirow { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; font-size: 14px; margin: 6px 0; }
+  #iiText { width: 100%; box-sizing: border-box; font: 14px/1.5 ui-monospace, Consolas, monospace; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 8px; margin-top: 8px; }
+  #iiForm { margin-top: 10px; } #iiForm summary { cursor: pointer; font-weight: 600; }
   body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; }
   main { max-width: 1180px; margin: 0 auto; padding: 28px 20px 60px; }
   header h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
@@ -193,7 +201,46 @@
 
   </div>
 
-  <p class="foot">Сравнение помогает увидеть изменения, но не заменяет проверку извещения и чертежа. Результат нужно проверять.</p>
+  <section class="panel ii" id="iiPanel" hidden>
+    <h2>Извещение об изменении</h2>
+    <p class="muted" style="margin:0 0 10px">Текст содержания изменения по ГОСТ Р 2.503-2023 из результатов сравнения: скопируйте в своё извещение или скачайте бланк.</p>
+    <div class="iigrid">
+      <label>Обозначение изменяемого документа<input type="text" id="iiDoc" placeholder="АБВГ.123456.001 СБ"></label>
+      <label>Изм. (номер изменения)<input type="text" id="iiIzm" placeholder="1"></label>
+    </div>
+    <div class="iirow">
+      <span>Текст:</span>
+      <label><input type="radio" name="iiMode" value="sheets" checked> по листам («Лист 1 заменить»)</label>
+      <label><input type="radio" name="iiMode" value="detail"> подробно (что изменилось на листе)</label>
+      <label><input type="checkbox" id="iiHead" checked> строка с номером изменения и обозначением</label>
+    </div>
+    <div class="bar"><button class="primary" id="iiMake" disabled>Составить текст</button><button id="iiCopy" disabled>Копировать</button><span id="iiStatus" class="muted"></span></div>
+    <textarea id="iiText" rows="9" spellcheck="false" placeholder="Загрузите две версии и нажмите «Составить текст». Текст можно править здесь же."></textarea>
+    <details id="iiForm">
+      <summary>Бланк извещения PDF (форма 2 по ГОСТ Р 2.503-2023)</summary>
+      <div class="iigrid">
+        <label>Обозначение извещения<input type="text" id="iiNum" placeholder="АБВГ.15-2026"></label>
+        <label>Организация (код или наименование)<input type="text" id="iiOrg"></label>
+        <label>Подразделение<input type="text" id="iiDept"></label>
+        <label>Дата выпуска<input type="text" id="iiDate" placeholder="24.11.2026"></label>
+        <label>Срок изменения<input type="text" id="iiSrok"></label>
+        <label>Причина<select id="iiReason"><option>Устранение ошибок</option><option>Введение улучшений и усовершенствований конструктивных</option><option>Введение улучшений и усовершенствований технологических</option><option>Введение улучшений в результате стандартизации и унификации</option><option>Внедрение и изменение стандартов и технических условий</option><option>По результатам испытаний</option><option>Отработка документов с изменением литеры</option><option>Улучшение качества</option><option>Требования заказчика (представительства заказчика)</option><option>Изменение схемы</option></select></label>
+        <label>Указание о заделе<input type="text" id="iiZadel" placeholder="Не отражается"></label>
+        <label>Указание о внедрении<input type="text" id="iiVnedr" placeholder="—"></label>
+        <label>Применяемость<input type="text" id="iiPrimen"></label>
+        <label>Разослать<input type="text" id="iiRaz"></label>
+        <label>Составил<input type="text" id="iiSost"></label>
+        <label>Проверил<input type="text" id="iiProv"></label>
+        <label>Т. контроль<input type="text" id="iiTk"></label>
+        <label>Н. контроль<input type="text" id="iiNk"></label>
+        <label>Утвердил<input type="text" id="iiUtv"></label>
+        <label>Предст. заказчика<input type="text" id="iiPz"></label>
+      </div>
+      <div class="bar"><button id="iiPdf" disabled>Скачать бланк PDF</button><span class="muted">В бланк идёт текст из поля выше, без строки с номером изменения — он стоит в своих графах.</span></div>
+    </details>
+  </section>
+
+  <p class="foot">Сравнение помогает увидеть изменения, но не заменяет проверку извещения и чертежа. Результат нужно проверять. Текст извещения составляется по найденным отличиям: для чертежей изменения графики описываются только по зонам, что именно изменилось в изображении, допишите сами. Основная надпись и таблица изменений в ней в текст не попадают.</p>
 </main>
 
 <script>/*__PDFJS__*/</script>
@@ -202,6 +249,12 @@
 <script>/*__XLSX__*/</script>
 <script>/*__PE__*/</script>
 <script>/*__BOMCMP__*/</script>
+<script>/*__CORE__*/</script>
+<script>/*__PDFLIB__*/</script>
+<script>/*__FONTKIT__*/</script>
+<script>/*__ESKDPDF__*/</script>
+<script>/*__II__*/</script>
+<script>var FONT_REG = '/*__FONT_REG__*/';</script>
 <script>
 (function () {
   'use strict';
@@ -251,6 +304,9 @@
     $('run').disabled = !both;
     $('all').hidden = !(both && (docs.A.n > 1 || docs.B.n > 1));
     if (both) run();
+    iiDoc = null; $('iiText').value = ''; $('iiCopy').disabled = true; $('iiPdf').disabled = true; $('iiStatus').textContent = '';
+    if (key === 'B') $('iiDoc').value = '';
+    iiShow();
   }
 
   // ---------- отрисовка листа ----------
@@ -310,6 +366,9 @@
     var A = prepItems(res.rA.items, d.ax, d.ay), B = prepItems(res.rB.items, d.bx, d.by);
     var mm = res.scale * 72 / 25.4;
     res.text = CMP.textDiff(A, B, 1.5 * mm, 12 * mm);
+    var fb = CMP.findFrame(res.mB, res.rB.w, res.rB.h);
+    res.frameB = fb ? { x0: fb.x0 + d.bx, y0: fb.y0 + d.by, x1: fb.x1 + d.bx, y1: fb.y1 + d.by } : null;
+    res.zones = II.zones(B, res.frameB, mm);
     res.hasText = A.length + B.length > 0;
   }
 
@@ -559,6 +618,7 @@
     $('modePdf').hidden = m !== 'pdf'; $('modeBom').hidden = m !== 'bom';
     $('modeBtnPdf').classList.toggle('on', m === 'pdf'); $('modeBtnBom').classList.toggle('on', m === 'bom');
     if (m === 'pdf' && cur) fit();
+    iiDoc = null; $('iiText').value = ''; $('iiStatus').textContent = ''; $('iiCopy').disabled = true; $('iiPdf').disabled = true; $('iiDoc').value = ''; iiShow();
   }
   $('modeBtnPdf').addEventListener('click', function () { setMode('pdf'); });
   $('modeBtnBom').addEventListener('click', function () { setMode('bom'); });
@@ -629,6 +689,7 @@
     table('Количество одинаковых компонентов', ['Было → стало', 'Компонент'], r.qty.map(function (q) { return [q.from + ' → ' + q.to, q.key]; }));
     out.appendChild(sec);
     $('bomXls').disabled = false;
+    iiShow();
     $('bomStatus').textContent = r.added.length + r.removed.length + r.changed.length ? '' : 'Отличий нет.';
   }
   $('bomXls').addEventListener('click', function () {
@@ -638,6 +699,87 @@
     var w2 = XLSX.utils.aoa_to_sheet(sh.quantity); w2['!cols'] = [{ wch: 50 }, { wch: 10 }, { wch: 10 }, { wch: 10 }];
     XLSX.utils.book_append_sheet(wb, w1, 'По позициям'); XLSX.utils.book_append_sheet(wb, w2, 'По количеству');
     XLSX.writeFile(wb, 'сравнение BOM ' + boms.B.name.replace(/\.[^.]+$/, '') + '.xlsx');
+  });
+
+  /* ---------- извещение об изменении ---------- */
+  var II_FIELDS = ['iiOrg', 'iiDept', 'iiSost', 'iiProv', 'iiTk', 'iiNk', 'iiUtv', 'iiPz', 'iiRaz', 'iiZadel', 'iiVnedr', 'iiReason'];
+  function iiStore(save) {
+    try {
+      if (save) { var o = {}; II_FIELDS.forEach(function (k) { o[k] = $(k).value; }); o.mode = iiMode(); o.head = $('iiHead').checked; localStorage.setItem('eskd-ii', JSON.stringify(o)); }
+      else { var d = JSON.parse(localStorage.getItem('eskd-ii') || 'null'); if (d) { II_FIELDS.forEach(function (k) { if (d[k] != null) $(k).value = d[k]; }); if (d.mode) document.querySelector('input[name=iiMode][value=' + d.mode + ']').checked = true; if (d.head != null) $('iiHead').checked = d.head; } }
+    } catch (e) {}
+  }
+  iiStore(false);
+  II_FIELDS.forEach(function (k) { $(k).addEventListener('change', function () { iiStore(true); }); });
+  function iiMode() { var r = document.querySelector('input[name=iiMode]:checked'); return r ? r.value : 'sheets'; }
+  var iiDoc = null; // данные для текста: { kind, desig, sheetsA, sheetsB, pages | spec | bom }
+  function iiShow() {
+    var pdfReady = !!(docs.A && docs.B), bomReady = !!bomRes, isBom = !$('modeBom').hidden;
+    $('iiPanel').hidden = !(isBom ? bomReady : pdfReady);
+    $('iiMake').disabled = isBom ? !bomReady : !pdfReady;
+    if (isBom && bomReady) { iiDoc = { kind: 'bom', bom: bomRes }; iiCompose(); }
+  }
+  function iiCompose() {
+    if (!iiDoc) return;
+    var d = Object.assign({}, iiDoc, { desig: $('iiDoc').value.trim(), izm: $('iiIzm').value.trim() });
+    $('iiText').value = II.compose(d, { mode: iiMode(), header: $('iiHead').checked });
+    $('iiCopy').disabled = false; $('iiPdf').disabled = false;
+  }
+  document.querySelectorAll('input[name=iiMode]').forEach(function (r) { r.addEventListener('change', function () { iiStore(true); iiCompose(); }); });
+  $('iiHead').addEventListener('change', function () { iiStore(true); iiCompose(); });
+  $('iiDoc').addEventListener('change', iiCompose); $('iiIzm').addEventListener('change', iiCompose);
+
+  async function pnkDoc(pdf, name) {
+    var doc = { name: name, pages: [] };
+    for (var i = 1; i <= pdf.numPages; i++) { var pg = await pdf.getPage(i); var tc = await pg.getTextContent(); doc.pages.push(PNK.buildPage(i, tc.items)); }
+    return { doc: doc, meta: PNK.analyze(doc) };
+  }
+  $('iiMake').addEventListener('click', async function () {
+    if (!$('modeBom').hidden) { iiShow(); return; }
+    if (busy || !docs.A || !docs.B) return;
+    busy = true; $('iiMake').disabled = true; $('run').disabled = true;
+    try {
+      $('iiStatus').textContent = 'Читаю документы…';
+      var A = await pnkDoc(docs.A.pdf, docs.A.name), B = await pnkDoc(docs.B.pdf, docs.B.name);
+      var mb = B.meta, desig = mb.desig ? (mb.desig.full || mb.desig.base) : '';
+      if (desig && !$('iiDoc').value.trim()) $('iiDoc').value = desig;
+      var d = { desig: desig, sheetsA: docs.A.n, sheetsB: docs.B.n };
+      if (A.meta.spec && A.meta.spec.length && mb.spec && mb.spec.length) {
+        d.kind = 'spec'; d.spec = II.specDiff(A.meta.spec, mb.spec);
+      } else {
+        d.kind = 'pdf'; d.pages = [];
+        var n = Math.min(docs.A.n, docs.B.n), tbH = mb.tb && mb.tb.top ? mb.tb.top * 25.4 / 72 - 5 + 1 : 55;
+        for (var i = 1; i <= n; i++) {
+          $('iiStatus').textContent = 'Сравниваю лист ' + i + ' из ' + n + '…';
+          await new Promise(function (r) { setTimeout(r, 10); });
+          var r = await comparePair(i, i, false);
+          d.pages.push({ n: i, changes: II.pageChanges({ n: i, text: r.text, regions: r.regions, frame: r.frameB, zones: r.zones, mm: r.scale * 72 / 25.4, first: i === 1, tbH: Math.min(60, Math.max(15, tbH)) }) });
+        }
+      }
+      iiDoc = d; iiCompose();
+      var nch = d.kind === 'spec' ? d.spec.length : d.pages.reduce(function (s, p) { return s + p.changes.length; }, 0);
+      $('iiStatus').textContent = nch ? 'Готово. Проверьте текст и при необходимости поправьте.' : 'Отличий в содержании не найдено.';
+    } catch (e) { console.error(e); $('iiStatus').textContent = 'Ошибка: ' + (e && e.message || e); }
+    busy = false; $('iiMake').disabled = false; $('run').disabled = false;
+  });
+  $('iiCopy').addEventListener('click', function () {
+    var t = $('iiText').value, done = function () { $('iiCopy').textContent = 'Скопировано'; setTimeout(function () { $('iiCopy').textContent = 'Копировать'; }, 1500); };
+    try { navigator.clipboard.writeText(t).then(done, function () { $('iiText').select(); document.execCommand('copy'); done(); }); } catch (e) { $('iiText').select(); document.execCommand('copy'); done(); }
+  });
+  $('iiPdf').addEventListener('click', async function () {
+    try {
+      var bin = atob(FONT_REG), font = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) font[i] = bin.charCodeAt(i);
+      var lines = $('iiText').value.split('\n');
+      if ($('iiHead').checked && lines.length && /^(Изм\. \S+\s+)?\S/.test(lines[0]) && iiDoc && iiDoc.kind !== 'bom' && (lines[0].indexOf($('iiDoc').value.trim()) >= 0 && $('iiDoc').value.trim())) lines.shift();
+      var reason = $('iiReason'), codes = ['07', '01', '02', '03', '04', '05', '06', '08', '09', '10'];
+      var bytes = await II.renderPdf(PDFLib, fontkit, font, ESKDPDF, lines.join('\n'), {
+        iiDesig: $('iiNum').value, org: $('iiOrg').value, dept: $('iiDept').value, date: $('iiDate').value, srok: $('iiSrok').value,
+        reason: reason.value, code: codes[reason.selectedIndex] || '', zadel: $('iiZadel').value, vnedr: $('iiVnedr').value, primen: $('iiPrimen').value, razoslat: $('iiRaz').value,
+        izm: $('iiIzm').value, docDesig: $('iiDoc').value, sost: $('iiSost').value, prov: $('iiProv').value, tk: $('iiTk').value, nk: $('iiNk').value, utv: $('iiUtv').value, pz: $('iiPz').value });
+      var url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' })), a = el('a');
+      a.href = url; a.download = 'Извещение ' + ($('iiNum').value.trim() || $('iiDoc').value.trim() || '').replace(/[\\/:*?"<>|]/g, '_') + '.pdf';
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    } catch (e) { console.error(e); $('iiStatus').textContent = 'Ошибка при сборке бланка: ' + (e && e.message || e); }
   });
 })();
 </script>
