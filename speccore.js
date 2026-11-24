@@ -324,7 +324,7 @@
     function form2a(p, n) {
       var y0 = G.fy0, top = y0 + G.tb2;
       R(p, 20, y0, 205, top, thick);
-      leftBlock(p, top, 3, 1, null);
+      leftBlock(p, top, 3, 2, null);
       L(p, 185, y0, 185, top, thick); L(p, 195, y0, 195, top, thick);
       L(p, 185, top - 5, 205, top - 5, thin);
       C(p, 'Вер.', 185, top - 5, 195, top, SZ.small); C(p, 'Лист', 195, top - 5, 205, top, SZ.small);

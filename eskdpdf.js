@@ -152,7 +152,7 @@
     function form2a(p, F, meta, n) {
       var d = F.fx1 - 205, y0 = F.fy0, top = y0 + 15, X = function (x) { return x + d; };
       R(p, X(20), y0, X(205), top, thick);
-      leftBlock(p, d, top, 3, 1, null);
+      leftBlock(p, d, top, 3, 2, null);
       L(p, X(185), y0, X(185), top, thick); L(p, X(195), y0, X(195), top, thick);
       L(p, X(185), top - 5, X(205), top - 5, thin);
       C(p, 'Вер.', X(185), top - 5, X(195), top, SZ.small); C(p, 'Лист', X(195), top - 5, X(205), top, SZ.small);

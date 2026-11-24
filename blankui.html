@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Пустые рамки ЕСКД А4–А0: PDF и Word</title>
+<style>
+  :root {
+    --bg: #f6f5f1; --card: #ffffff; --ink: #1d2126; --muted: #626a73; --line: #dedbd2;
+    --accent: #1f5fa8; --err: #b3261e; --errbg: #fbe9e7; --warn: #8a5a00; --warnbg: #fdf1d6;
+    --note: #3d5a80; --notebg: #e6eef7; --ok: #1e6b3a; --okbg: #e3f3e8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #15181c; --card: #1e2227; --ink: #e8eaed; --muted: #9aa3ad; --line: #32383f;
+      --accent: #7fb2ee; --err: #ff8a80; --errbg: #3a1d1b; --warn: #f2c261; --warnbg: #3a2f14;
+      --note: #9fc1e8; --notebg: #1c2a3a; --ok: #7fd49b; --okbg: #17301f;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; }
+  main { max-width: 1240px; margin: 0 auto; padding: 28px 20px 60px; }
+  header h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  header p { margin: 0; color: var(--muted); }
+  .privacy { margin: 16px 0 0; padding: 10px 14px; border-left: 3px solid var(--ok); background: var(--okbg); border-radius: 0 6px 6px 0; font-size: 14px; }
+  .grid { display: grid; grid-template-columns: minmax(330px, 420px) 1fr; gap: 20px; margin-top: 20px; align-items: start; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
+  .card h2 { font-size: 16px; margin: 0 0 10px; }
+  .step { color: var(--muted); font-weight: 600; margin-right: 6px; }
+  .drop { border: 2px dashed var(--line); border-radius: 8px; padding: 20px 14px; text-align: center; cursor: pointer; }
+  .drop:hover, .drop.over, .drop:focus-visible { border-color: var(--accent); outline: none; }
+  .drop strong { display: block; }
+  .drop span { color: var(--muted); font-size: 13px; }
+  .file { margin-top: 8px; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+  label.f { display: block; font-size: 13px; color: var(--muted); margin: 8px 0 2px; }
+  input[type=text], input[type=number], textarea { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); }
+  textarea { resize: vertical; min-height: 54px; }
+  input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+  .sign { display: grid; grid-template-columns: 96px 1fr; gap: 6px 8px; align-items: center; margin-top: 6px; }
+  .sign input.lbl { color: var(--muted); }
+  .lit { display: flex; gap: 6px; }
+  .lit input { width: 52px; text-align: center; }
+  .chk { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; margin: 6px 0; }
+  .num { display: flex; gap: 8px; align-items: center; font-size: 14px; margin: 6px 0; }
+  .num input { width: 64px; }
+  button { font: inherit; padding: 8px 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  @media (prefers-color-scheme: dark) { button.primary { color: #10161d; } }
+  button:disabled { opacity: .5; cursor: default; }
+  .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+  #status { color: var(--muted); font-size: 14px; }
+  .preview { width: 100%; height: 1000px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .empty { height: 300px; display: flex; align-items: center; justify-content: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 10px; text-align: center; padding: 20px; }
+  .w { display: grid; grid-template-columns: 92px 1fr; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .w:first-of-type { border-top: 0; }
+  .chip { font-size: 12px; padding: 2px 8px; border-radius: 999px; font-weight: 600; justify-self: start; white-space: nowrap; }
+  .chip.err { color: var(--err); background: var(--errbg); } .chip.warn { color: var(--warn); background: var(--warnbg); } .chip.note { color: var(--note); background: var(--notebg); }
+  .muted { color: var(--muted); font-size: 13px; }
+  .foot { color: var(--muted); font-size: 13px; margin-top: 26px; }
+  table.cols { border-collapse: collapse; font-size: 13px; margin: 6px 0; width: 100%; }
+  select.sel { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); }
+  .radio { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; margin: 4px 0; }
+  .ul-item { border-top: 1px solid var(--line); padding: 8px 0; }
+  .ul-item:first-of-type { border-top: 0; }
+  .ul-item .hdr { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+  .ul-item .g3 { display: grid; grid-template-columns: 1.4fr .5fr; gap: 6px; margin-top: 4px; }
+  .ul-item .hash { font: 12px/1.4 ui-monospace, Consolas, monospace; overflow-wrap: anywhere; color: var(--muted); margin-top: 4px; }
+  .ul-item button.x { padding: 0 8px; font-size: 13px; }
+  table.cols td { border-bottom: 1px solid var(--line); padding: 3px 8px 3px 0; vertical-align: top; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Пустые рамки ЕСКД: бланки А4–А0 в PDF и Word</h1>
+    <p>Лист с рамкой, дополнительными графами и основной надписью по ГОСТ Р 2.104-2023: форма 1 для чертежей и схем, формы 2 и 2а для текстовых документов. Реквизиты можно заполнить сразу или оставить пустыми. Прототип, версия <span id="ver"></span>.</p>
+  </header>
+  <p class="privacy">Бланк собирается в вашем браузере, ничего никуда не отправляется. Страница работает без интернета.</p>
+
+  <div class="grid">
+    <div>
+      <section class="card">
+        <h2><span class="step">1</span>Лист</h2>
+        <label class="f" for="format">Формат</label>
+        <select id="format" class="sel">
+          <option value="A4-P">А4, вертикально</option>
+          <option value="A3-L">А3, горизонтально</option><option value="A3-P">А3, вертикально</option>
+          <option value="A2-L">А2, горизонтально</option><option value="A2-P">А2, вертикально</option>
+          <option value="A1-L">А1, горизонтально</option><option value="A1-P">А1, вертикально</option>
+          <option value="A0-L">А0, горизонтально</option><option value="A0-P">А0, вертикально</option>
+        </select>
+        <label class="f">Основная надпись первого листа</label>
+        <label class="radio"><input type="radio" name="form" value="1" checked><span>Форма 1 — чертёж, схема (185×55)</span></label>
+        <label class="radio"><input type="radio" name="form" value="2"><span>Форма 2 — текстовый документ: пояснительная записка, ТУ, ведомость (185×40)</span></label>
+        <label class="radio"><input type="radio" name="form" value="2a"><span>Форма 2а — только последующий лист (185×15)</span></label>
+        <div class="num"><input type="number" id="total" min="1" max="100" value="1"><span>листов (второй и следующие — по форме 2а)</span></div>
+        <label class="chk"><input type="checkbox" id="g26" checked><span>Графа 26 — обозначение, повёрнутое на 180°, в левом верхнем углу (для графических документов)</span></label>
+        <label class="chk"><input type="checkbox" id="side" checked><span>Дополнительные графы 19–23 слева (инв. №, подписи)</span></label>
+        <label class="chk"><input type="checkbox" id="sideTop" checked><span>Графы 24–25 на первом листе (перв. примен., справ. №)</span></label>
+        <label class="chk"><input type="checkbox" id="num" checked><span>Проставить номера листов и общее количество</span></label>
+      </section>
+
+      <section class="card">
+        <h2><span class="step">2</span>Реквизиты <span class="muted" style="font-weight:400">— можно не заполнять</span></h2>
+        <label class="f" for="desig">Обозначение документа</label>
+        <input type="text" id="desig" placeholder="АБВГ.123456.001">
+        <label class="f" for="name">Наименование изделия</label>
+        <input type="text" id="name" placeholder="Корпус">
+        <div id="docNameRow" hidden><label class="f" for="docName">Наименование документа</label>
+        <input type="text" id="docName" placeholder="Пояснительная записка"></div>
+        <div class="row2">
+          <div><label class="f" for="org">Организация</label><input type="text" id="org" placeholder="ООО «Пример»"></div>
+          <div><label class="f" for="lit">Литера</label><input type="text" id="lit" placeholder="О1"></div>
+        </div>
+        <div class="row2">
+          <div><label class="f" for="razrab">Разраб.</label><input type="text" id="razrab"></div>
+          <div><label class="f" for="prov">Пров.</label><input type="text" id="prov"></div>
+          <div><label class="f" for="nkontr">Н. контр.</label><input type="text" id="nkontr"></div>
+          <div><label class="f" for="utv">Утв.</label><input type="text" id="utv"></div>
+          <div><label class="f" for="perv">Перв. примен.</label><input type="text" id="perv"></div>
+          <div><label class="f" for="inv">Инв. № подл.</label><input type="text" id="inv"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2><span class="step">3</span>Шаблон Word</h2>
+        <p class="muted" style="margin:0 0 6px">Рамка и графы лежат в колонтитулах, основная надпись — таблица с точными размерами ячеек: её можно заполнять прямо в Word. Первый лист и последующие оформлены разными колонтитулами. Word не поддерживает листы больше А3.</p>
+        <label class="f" for="font">Шрифт</label>
+        <select id="font" class="sel">
+          <option>GOST type A</option><option>ISOCPEUR</option><option>Arial</option><option>Times New Roman</option>
+        </select>
+        <label class="chk"><input type="checkbox" id="ital" checked><span>Наклонный</span></label>
+      </section>
+    </div>
+
+    <div>
+      <div class="bar">
+        <button class="primary" id="savePdf">Скачать PDF</button>
+        <button id="saveDocx">Скачать Word (.docx)</button>
+        <span id="status"></span>
+      </div>
+      <div id="pv"><div class="empty">Собираем лист…</div></div>
+    </div>
+  </div>
+
+  <p class="foot">Основные надписи — ГОСТ Р 2.104-2023 (формы 1, 2, 2а), дополнительные графы 19–26. Форматы — ГОСТ 2.301; формат А4 — только вертикально, как требует ГОСТ Р 2.104. Толщина линий: основная 0,6 мм, тонкая 0,25 мм. Графы 27–30 для государственного заказа не выводятся.</p>
+</main>
+
+<script>/*__PDFLIB__*/</script>
+<script>/*__FONTKIT__*/</script>
+<script>var FONT_REG = '/*__FONT_REG__*/';</script>
+<script>/*__BLANK__*/</script>
+<script>
+(function () {
+  'use strict';
+  function $(id) { return document.getElementById(id); }
+  $('ver').textContent = BLANK.VERSION;
+  var KEEP = ['format', 'total', 'g26', 'side', 'sideTop', 'num', 'desig', 'name', 'docName', 'org', 'lit', 'razrab', 'prov', 'nkontr', 'utv', 'perv', 'inv', 'font', 'ital'];
+  var fontBytes = Uint8Array.from(atob(FONT_REG), function (c) { return c.charCodeAt(0); });
+  var lastUrl = null, lastPdf = null, timer = null, busy = false, again = false;
+  function form() { var r = document.querySelector('input[name=form]:checked'); return r ? r.value : '1'; }
+  function store(save) {
+    try {
+      if (save) { var o = { form: form() }; KEEP.forEach(function (k) { var e = $(k); o[k] = e.type === 'checkbox' ? e.checked : e.value; }); localStorage.setItem('eskd-blank', JSON.stringify(o)); }
+      else {
+        var d = JSON.parse(localStorage.getItem('eskd-blank') || 'null'); if (!d) return;
+        KEEP.forEach(function (k) { var e = $(k); if (d[k] === undefined) return; if (e.type === 'checkbox') e.checked = !!d[k]; else e.value = d[k]; });
+        var r = document.querySelector('input[name=form][value="' + d.form + '"]'); if (r) r.checked = true;
+      }
+    } catch (e) {}
+  }
+  function meta() {
+    var v = function (k) { return $(k).value.trim(); };
+    return { desig: v('desig'), name: v('name'), docName: form() === '1' ? '' : v('docName'), org: v('org'), lit: v('lit'), razrab: v('razrab'), prov: v('prov'), nkontr: v('nkontr'), utv: v('utv'), pervPrimen: v('perv'), invPodl: v('inv') };
+  }
+  function sheets(limit) {
+    var f = $('format').value.split('-'), fm = form(), total = Math.max(1, Math.min(100, parseInt($('total').value, 10) || 1)), m = meta();
+    var base = { fmt: f[0], orient: f[1], graphic: $('g26').checked, side: $('side').checked, num: $('num').checked, total: total, meta: m };
+    var out = [], n = limit ? Math.min(total, limit) : total;
+    for (var i = 1; i <= n; i++) {
+      var o = Object.assign({}, base, { n: i, form: i === 1 ? fm : '2a', sideTop: i === 1 && fm !== '2a' && $('sideTop').checked });
+      out.push(BLANK.build(o));
+    }
+    return { list: out, total: total, fmt: f[0] };
+  }
+  function fileBase() {
+    var f = $('format').value.split('-')[0].replace('A', 'А'), fm = form(), d = $('desig').value.trim();
+    return ((d ? d + ' ' : '') + 'Бланк ' + f + ' форма ' + (fm === '2a' ? '2а' : fm)).replace(/[\\/:*?"<>|]/g, '_');
+  }
+  function refresh() {
+    var fm = form();
+    $('docNameRow').hidden = fm === '1';
+    var f = $('format').value.split('-')[0];
+    $('saveDocx').disabled = !BLANK.DOCX_OK[f];
+    $('saveDocx').title = BLANK.DOCX_OK[f] ? '' : 'Word не поддерживает листы больше А3';
+  }
+  async function render() {
+    if (busy) { again = true; return; }
+    busy = true; refresh(); store(true);
+    try {
+      var s = sheets();
+      lastPdf = await BLANK.renderPdf(PDFLib, fontkit, fontBytes, s.list, { title: fileBase() });
+      if (lastUrl) URL.revokeObjectURL(lastUrl);
+      lastUrl = URL.createObjectURL(new Blob([lastPdf], { type: 'application/pdf' }));
+      var pv = $('pv'); pv.textContent = '';
+      var fr = document.createElement('iframe'); fr.className = 'preview'; fr.title = 'Предпросмотр бланка'; fr.src = lastUrl + '#view=Fit'; pv.appendChild(fr);
+      $('status').textContent = 'Листов: ' + s.total;
+    } catch (e) { $('status').textContent = 'Ошибка: ' + e.message; }
+    busy = false;
+    if (again) { again = false; render(); }
+  }
+  function later() { clearTimeout(timer); timer = setTimeout(render, 350); }
+  function download(bytes, name, type) {
+    var url = URL.createObjectURL(new Blob([bytes], { type: type }));
+    var a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+  $('savePdf').addEventListener('click', function () { if (lastPdf) download(lastPdf, fileBase() + '.pdf', 'application/pdf'); });
+  $('saveDocx').addEventListener('click', function () {
+    // Word: первый лист — своя форма, все следующие — 2а; номера листов — полями PAGE и NUMPAGES
+    var f = $('format').value.split('-'), fm = form(), m = meta();
+    var base = { fmt: f[0], orient: f[1], graphic: $('g26').checked, side: $('side').checked, num: $('num').checked, fields: true, meta: m };
+    var first = BLANK.build(Object.assign({}, base, { form: fm, sideTop: fm !== '2a' && $('sideTop').checked }));
+    var next = fm === '2a' ? null : BLANK.build(Object.assign({}, base, { form: '2a', sideTop: false }));
+    var bytes = BLANK.buildDocx(first, next, { font: $('font').value, italic: $('ital').checked, title: fileBase() });
+    download(bytes, fileBase() + '.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+  });
+  store(false);
+  document.querySelectorAll('input, select').forEach(function (e) { e.addEventListener(e.type === 'text' || e.type === 'number' ? 'input' : 'change', later); });
+  document.querySelectorAll('input[name=form]').forEach(function (r) { r.addEventListener('change', function () { $('g26').checked = form() !== '2'; later(); }); });
+  render();
+})();
+</script>
+</body>
+</html>
