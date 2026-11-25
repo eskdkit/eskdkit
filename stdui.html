@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Проверка актуальности ГОСТ онлайн</title>
+<style>
+  :root {
+    --bg: #f6f5f1; --card: #ffffff; --ink: #1d2126; --muted: #626a73; --line: #dedbd2;
+    --accent: #1f5fa8; --err: #b3261e; --errbg: #fbe9e7; --warn: #8a5a00; --warnbg: #fdf1d6;
+    --note: #3d5a80; --notebg: #e6eef7; --ok: #1e6b3a; --okbg: #e3f3e8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #15181c; --card: #1e2227; --ink: #e8eaed; --muted: #9aa3ad; --line: #32383f;
+      --accent: #7fb2ee; --err: #ff8a80; --errbg: #3a1d1b; --warn: #f2c261; --warnbg: #3a2f14;
+      --note: #9fc1e8; --notebg: #1c2a3a; --ok: #7fd49b; --okbg: #17301f;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; }
+  main { max-width: 1240px; margin: 0 auto; padding: 28px 20px 60px; }
+  header h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  header p { margin: 0; color: var(--muted); }
+  .privacy { margin: 16px 0 0; padding: 10px 14px; border-left: 3px solid var(--ok); background: var(--okbg); border-radius: 0 6px 6px 0; font-size: 14px; }
+  .grid { display: grid; grid-template-columns: minmax(330px, 420px) 1fr; gap: 20px; margin-top: 20px; align-items: start; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
+  .card h2 { font-size: 16px; margin: 0 0 10px; }
+  .step { color: var(--muted); font-weight: 600; margin-right: 6px; }
+  .drop { border: 2px dashed var(--line); border-radius: 8px; padding: 20px 14px; text-align: center; cursor: pointer; }
+  .drop:hover, .drop.over, .drop:focus-visible { border-color: var(--accent); outline: none; }
+  .drop strong { display: block; }
+  .drop span { color: var(--muted); font-size: 13px; }
+  .file { margin-top: 8px; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+  label.f { display: block; font-size: 13px; color: var(--muted); margin: 8px 0 2px; }
+  input[type=text], input[type=number], textarea { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); }
+  textarea { resize: vertical; min-height: 54px; }
+  input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+  .sign { display: grid; grid-template-columns: 96px 1fr; gap: 6px 8px; align-items: center; margin-top: 6px; }
+  .sign input.lbl { color: var(--muted); }
+  .lit { display: flex; gap: 6px; }
+  .lit input { width: 52px; text-align: center; }
+  .chk { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; margin: 6px 0; }
+  .num { display: flex; gap: 8px; align-items: center; font-size: 14px; margin: 6px 0; }
+  .num input { width: 64px; }
+  button { font: inherit; padding: 8px 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  @media (prefers-color-scheme: dark) { button.primary { color: #10161d; } }
+  button:disabled { opacity: .5; cursor: default; }
+  .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+  #status { color: var(--muted); font-size: 14px; }
+  .preview { width: 100%; height: 1000px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+  .empty { height: 300px; display: flex; align-items: center; justify-content: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 10px; text-align: center; padding: 20px; }
+  .w { display: grid; grid-template-columns: 92px 1fr; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .w:first-of-type { border-top: 0; }
+  .chip { font-size: 12px; padding: 2px 8px; border-radius: 999px; font-weight: 600; justify-self: start; white-space: nowrap; }
+  .chip.err { color: var(--err); background: var(--errbg); } .chip.warn { color: var(--warn); background: var(--warnbg); } .chip.note { color: var(--note); background: var(--notebg); }
+  .muted { color: var(--muted); font-size: 13px; }
+  .foot { color: var(--muted); font-size: 13px; margin-top: 26px; }
+  table.cols { border-collapse: collapse; font-size: 13px; margin: 6px 0; width: 100%; }
+  select.sel { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); }
+  .radio { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; margin: 4px 0; }
+  .ul-item { border-top: 1px solid var(--line); padding: 8px 0; }
+  .ul-item:first-of-type { border-top: 0; }
+  .ul-item .hdr { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+  .ul-item .g3 { display: grid; grid-template-columns: 1.4fr .5fr; gap: 6px; margin-top: 4px; }
+  .ul-item .hash { font: 12px/1.4 ui-monospace, Consolas, monospace; overflow-wrap: anywhere; color: var(--muted); margin-top: 4px; }
+  .ul-item button.x { padding: 0 8px; font-size: 13px; }
+  table.cols td { border-bottom: 1px solid var(--line); padding: 3px 8px 3px 0; vertical-align: top; }
+
+  textarea#src { min-height: 180px; font: 14px/1.45 ui-monospace, Consolas, monospace; }
+  table.res { border-collapse: collapse; width: 100%; font-size: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  table.res th, table.res td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.res th { font-size: 13px; color: var(--muted); font-weight: 600; background: var(--bg); }
+  table.res td.d { white-space: nowrap; font-weight: 600; }
+  table.res .t { color: var(--muted); font-size: 13px; }
+  .chip.ok { color: var(--ok); background: var(--okbg); }
+  .sum { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
+  .wide { max-width: 1240px; }
+  .grid1 { display: grid; grid-template-columns: minmax(320px, 420px) 1fr; gap: 20px; margin-top: 20px; align-items: start; }
+  @media (max-width: 900px) { .grid1 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Проверка актуальности ГОСТ</h1>
+    <p>Вставьте текст или загрузите документ (PDF, Word) — все ссылки на ГОСТ, ГОСТ Р и ПНСТ будут сверены с перечнями действующих стандартов Росстандарта: действует, заменён и на что, отменён. Прототип, версия <span id="ver"></span>.</p>
+  </header>
+  <p class="privacy">Текст и файлы проверяются в вашем браузере и никуда не отправляются. Страница работает без интернета.</p>
+
+  <div class="grid1">
+    <div>
+      <section class="card">
+        <h2><span class="step">1</span>Текст или документ</h2>
+        <div class="drop" id="drop" tabindex="0" role="button" aria-label="Выбрать файлы PDF или Word">
+          <strong>Перетащите сюда PDF или Word (.docx) или нажмите, чтобы выбрать</strong>
+          <span>Можно несколько файлов: чертежи, спецификации, ТУ, ПЗ</span>
+          <input type="file" id="pick" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple hidden>
+        </div>
+        <div class="file" id="fname"></div>
+        <label class="f" for="src">…или вставьте текст со ссылками на стандарты</label>
+        <textarea id="src" placeholder="Например: Основная надпись по ГОСТ 2.104-2006, допуски по ГОСТ 30893.1-2002, климатическое исполнение УХЛ4 по ГОСТ 15150-69"></textarea>
+        <div class="bar" style="margin:10px 0 0">
+          <button class="primary" id="run">Проверить</button>
+          <button id="clear">Очистить</button>
+        </div>
+      </section>
+      <section class="card">
+        <h2>О базе</h2>
+        <p class="muted" id="dbinfo" style="margin:0">Загружается…</p>
+      </section>
+    </div>
+
+    <div>
+      <div class="bar">
+        <button id="copy" disabled>Скопировать отчёт</button>
+        <button id="csv" disabled>Скачать таблицу (CSV)</button>
+        <label class="chk" style="margin:0"><input type="checkbox" id="onlyBad"><span>Только требующие внимания</span></label>
+        <span id="status"></span>
+      </div>
+      <div id="out"><div class="empty">Здесь появится таблица: ссылка в документе, статус и действующая редакция.</div></div>
+    </div>
+  </div>
+
+  <p class="foot">Данные — открытые перечни национальных и межгосударственных стандартов Росстандарта (действующие и принятые). Отменённых стандартов в перечнях нет, поэтому «заменён» означает: этого стандарта среди действующих нет, а по тому же номеру действует более новый (ГОСТ 2.104-2006 → ГОСТ Р 2.104-2023). Недатированная ссылка по ГОСТ 1.5 означает последнюю редакцию — показывается действующая. Перед выпуском документа сверьте спорные позиции по официальному источнику.</p>
+</main>
+
+<script>/*__PDFJS__*/</script>
+<script>/*__PDFWORKER__*/</script>
+<script>/*__CORE__*/</script>
+<script>/*__DOCXR__*/</script>
+<script>/*__STD__*/</script>
+<script>var STD_DATA = '/*__STDDATA__*/', STD_DATE = '/*__STDDATE__*/';</script>
+<script>
+(function () {
+  'use strict';
+  function $(id) { return document.getElementById(id); }
+  function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
+  $('ver').textContent = STD.VERSION;
+  var db = null, files = [], last = null;
+  var LABEL = {
+    active: ['ok', 'Действует'], future: ['note', 'Принят'], replaced: ['err', 'Заменён'], wrongyear: ['warn', 'Нет такой редакции'],
+    absent: ['warn', 'Нет среди действующих'], undated: ['note', 'Без года'], 'undated-future': ['note', 'Без года']
+  };
+  var ORDER = { replaced: 0, absent: 1, wrongyear: 2, future: 3, 'undated-future': 4, undated: 5, active: 6 };
+
+  (async function () {
+    try {
+      var rows = await STD.loadPacked(STD_DATA);
+      db = new STD.Db(rows);
+      $('dbinfo').textContent = 'Перечни Росстандарта на ' + STD_DATE + ': ' + db.size.toLocaleString('ru-RU') + ' действующих и принятых стандартов. Дополнения после этой даты: ' +
+        STD.EXTRA.map(function (x) { return x.d; }).join(', ') + '.';
+      if ($('src').value.trim() || files.length) run();
+    } catch (e) { $('dbinfo').textContent = 'Не удалось загрузить базу: ' + e.message + '. Нужен современный браузер (Chrome, Edge, Firefox, Safari 16.4+).'; }
+  })();
+
+  function explain(r) {
+    var c = r.current, n = r.next, ref = r.ref;
+    switch (r.status) {
+      case 'active': return n ? 'Принят ' + n.d + (n.note ? ' (' + n.note + ')' : '') + ' — заменит этот стандарт' : (c ? 'Есть более новая редакция: ' + c.d : '');
+      case 'future': return r.entry && r.entry.note ? 'Принят, ' + r.entry.note + (c ? '; до этого действует ' + c.d : '') : 'Принят, но на ' + STD_DATE + ' ещё не был введён' + (c ? '; тогда действовал ' + c.d : '');
+      case 'replaced': return c ? 'Действует ' + c.d : n ? 'Принят ' + n.d + (n.note ? ' (' + n.note + ')' : '') : '';
+      case 'wrongyear': return 'Редакции ' + ref.year + ' года нет. По этому номеру действует ' + c.d + ' — проверьте обозначение';
+      case 'absent': return 'Отменён без замены или обозначение записано с ошибкой';
+      case 'undated': return 'Действующая редакция: ' + c.d + (n ? '; принят ' + n.d + (n.note ? ' (' + n.note + ')' : '') : '');
+      case 'undated-future': return 'Принят ' + n.d + ', ещё не введён';
+    }
+    return '';
+  }
+
+  function collect(text, file, page, map) {
+    STD.extract(text).forEach(function (ref) {
+      var k = ref.key, m = map[k] || (map[k] = { ref: ref, raws: {}, where: {}, n: 0 });
+      m.raws[ref.raw] = 1; m.n++;
+      if (file) { var w = m.where[file] || (m.where[file] = []); if (page && w.indexOf(page) < 0) w.push(page); }
+    });
+  }
+  function pages(list) {
+    var out = [], i = 0; list = list.slice().sort(function (a, b) { return a - b; });
+    while (i < list.length) { var j = i; while (j + 1 < list.length && list[j + 1] === list[j] + 1) j++; out.push(j > i + 1 ? list[i] + '–' + list[j] : j === i + 1 ? list[i] + ', ' + list[j] : String(list[i])); i = j + 1; }
+    return out.join(', ');
+  }
+  function whereText(m) {
+    return Object.keys(m.where).map(function (f) { var p = m.where[f]; return (Object.keys(m.where).length > 1 || f === 'текст' ? f + (p.length ? ': ' : '') : '') + (p.length ? 'л. ' + pages(p) : ''); }).join('; ');
+  }
+
+  async function textOfFile(f) {
+    var data = new Uint8Array(await f.arrayBuffer()), out = [];
+    if (/\.docx$/i.test(f.name)) {
+      var doc = await DOCXR.toDoc(f.name, data, PNK.buildPage);
+      doc.pages.forEach(function (p) { out.push({ page: p.num, text: p.lines.join('\n') }); });
+    } else {
+      var pdf = await pdfjsLib.getDocument({ data: data, disableFontFace: true, isEvalSupported: false, useSystemFonts: false }).promise;
+      for (var i = 1; i <= pdf.numPages; i++) {
+        var tc = await (await pdf.getPage(i)).getTextContent();
+        out.push({ page: i, text: PNK.buildPage(i, tc.items).lines.join('\n') });
+      }
+    }
+    return out;
+  }
+
+  async function run() {
+    if (!db) { $('status').textContent = 'База ещё загружается…'; return; }
+    var map = {}, chars = 0;
+    var t = $('src').value; chars += t.length; collect(t, files.length ? 'текст' : '', 0, map);
+    for (var i = 0; i < files.length; i++) {
+      $('status').textContent = 'Читаю: ' + files[i].name;
+      try {
+        (await textOfFile(files[i])).forEach(function (p) { chars += p.text.length; collect(p.text, files[i].name, p.page, map); });
+      } catch (e) { $('status').textContent = 'Не удалось прочитать ' + files[i].name + ': ' + e.message; }
+    }
+    var list = Object.keys(map).map(function (k) { var m = map[k], r = db.check(m.ref); r.m = m; return r; });
+    list.sort(function (a, b) { return ORDER[a.status] - ORDER[b.status] || a.ref.key.localeCompare(b.ref.key, 'ru', { numeric: true }); });
+    last = list; render();
+    $('status').textContent = list.length ? 'Найдено стандартов: ' + list.length : (chars ? 'Ссылок на ГОСТ не найдено' : '');
+  }
+
+  function render() {
+    var out = $('out'); out.textContent = '';
+    if (!last || !last.length) { out.appendChild(el('div', 'empty', last ? 'Ссылок на ГОСТ, ГОСТ Р или ПНСТ не найдено.' : 'Здесь появится таблица: ссылка в документе, статус и действующая редакция.')); $('copy').disabled = $('csv').disabled = true; return; }
+    $('copy').disabled = $('csv').disabled = false;
+    var cnt = {}; last.forEach(function (r) { cnt[r.status] = (cnt[r.status] || 0) + 1; });
+    var sum = el('div', 'sum');
+    Object.keys(ORDER).forEach(function (s) { if (cnt[s]) { var lb = LABEL[s]; sum.appendChild(el('span', 'chip ' + lb[0], lb[1] + ': ' + cnt[s])); } });
+    out.appendChild(sum);
+    var tb = el('table', 'res'), hd = el('tr');
+    ['Ссылка в документе', 'Статус', 'Что делать', 'Где'].forEach(function (h) { hd.appendChild(el('th', '', h)); });
+    tb.appendChild(hd);
+    var only = $('onlyBad').checked;
+    last.forEach(function (r) {
+      if (only && (r.status === 'active' && !r.next && !r.current || r.status === 'undated' && !r.next)) return;
+      var tr = el('tr'), lb = LABEL[r.status];
+      var d = el('td', 'd', Object.keys(r.m.raws).join(', '));
+      var name = (r.entry && r.entry.t) || (r.current && r.current.t) || '';
+      if (name) { d.appendChild(el('br')); d.appendChild(el('span', 't', name.length > 110 ? name.slice(0, 108) + '…' : name)); }
+      d.style.whiteSpace = 'normal';
+      tr.appendChild(d);
+      var st = el('td'); st.appendChild(el('span', 'chip ' + lb[0], lb[1])); tr.appendChild(st);
+      tr.appendChild(el('td', '', explain(r)));
+      var w = whereText(r.m);
+      tr.appendChild(el('td', 't', w || (r.m.n > 1 ? r.m.n + ' раз' : '')));
+      tb.appendChild(tr);
+    });
+    out.appendChild(tb);
+  }
+
+  function reportRows() { return last.map(function (r) { return [Object.keys(r.m.raws).join(', '), LABEL[r.status][1], explain(r), (r.entry && r.entry.t) || '', whereText(r.m)]; }); }
+  function fallbackCopy(t) { var ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} ta.remove(); }
+  $('copy').addEventListener('click', function () {
+    var t = 'Проверка актуальности ГОСТ (перечни Росстандарта на ' + STD_DATE + ', eskdkit.ru)\n\n' + reportRows().map(function (r) { return r[0] + ' — ' + r[1] + (r[2] ? ': ' + r[2] : ''); }).join('\n');
+    if (navigator.clipboard) navigator.clipboard.writeText(t).catch(function () { fallbackCopy(t); }); else fallbackCopy(t);
+    $('status').textContent = 'Отчёт скопирован';
+  });
+  $('csv').addEventListener('click', function () {
+    var q = function (s) { return '"' + String(s).replace(/"/g, '""') + '"'; };
+    var t = '\ufeff' + [['Ссылка', 'Статус', 'Что делать', 'Наименование', 'Где']].concat(reportRows()).map(function (r) { return r.map(q).join(';'); }).join('\r\n');
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([t], { type: 'text/csv' })); a.download = 'Проверка ГОСТ.csv'; document.body.appendChild(a); a.click(); a.remove();
+  });
+  $('onlyBad').addEventListener('change', render);
+  $('run').addEventListener('click', run);
+  $('clear').addEventListener('click', function () { $('src').value = ''; files = []; $('fname').textContent = ''; last = null; render(); $('status').textContent = ''; });
+  function addFiles(list) {
+    var ok = Array.prototype.filter.call(list, function (f) { return /\.(pdf|docx)$/i.test(f.name); });
+    if (!ok.length) { $('status').textContent = 'Нужны файлы PDF или Word (.docx)'; return; }
+    files = files.concat(ok); $('fname').textContent = files.map(function (f) { return f.name; }).join(', '); run();
+  }
+  var drop = $('drop');
+  drop.addEventListener('click', function () { $('pick').click(); });
+  drop.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('pick').click(); } });
+  $('pick').addEventListener('change', function () { addFiles(this.files); this.value = ''; });
+  ['dragenter', 'dragover'].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+  ['dragleave', 'drop'].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
+  drop.addEventListener('drop', function (e) { addFiles(e.dataTransfer.files); });
+  window.addEventListener('dragover', function (e) { e.preventDefault(); });
+  window.addEventListener('drop', function (e) { e.preventDefault(); });
+  var tm = null; $('src').addEventListener('input', function () { clearTimeout(tm); tm = setTimeout(run, 500); });
+})();
+</script>
+</body>
+</html>

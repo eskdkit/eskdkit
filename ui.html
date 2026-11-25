@@ -72,15 +72,15 @@
 <body>
 <main>
   <header>
-    <h1>Преднормоконтроль</h1>
-    <p>Проверка документа по формальным правилам до того, как он уйдёт на согласование. Прототип, версия <span id="ver"></span>.</p>
+    <h1>Преднормоконтроль: нормоконтроль КД онлайн</h1>
+    <p>Бесплатная проверка конструкторской документации по ЕСКД — чертежей, спецификаций, текстовых документов в PDF и Word — до того, как она уйдёт на нормоконтроль. Без ИИ: проверки по правилам стандартов. Прототип, версия <span id="ver"></span>.</p>
   </header>
-  <p class="privacy">Файлы обрабатываются в вашем браузере и никуда не отправляются. Страница работает без интернета.</p>
+  <p class="privacy">Файлы проверяются в вашем браузере и никуда не отправляются — ни на наш сервер, ни в нейросети. Страница работает без интернета.</p>
 
-  <div class="drop" id="drop" tabindex="0" role="button" aria-label="Выбрать файлы PDF">
-    <strong>Перетащите сюда PDF или нажмите, чтобы выбрать</strong>
+  <div class="drop" id="drop" tabindex="0" role="button" aria-label="Выбрать файлы PDF или Word">
+    <strong>Перетащите сюда PDF или Word (.docx) или нажмите, чтобы выбрать</strong>
     <span>Можно несколько файлов сразу. Полный комплект сверяется по спецификации, а если среди файлов есть извещение об изменении — по извещению. Нужен PDF с текстовым слоем, не скан.</span>
-    <input type="file" id="pick" accept="application/pdf,.pdf" multiple hidden>
+    <input type="file" id="pick" accept="application/pdf,.pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple hidden>
   </div>
 
   <div class="bar">
@@ -112,6 +112,7 @@
 <script>/*__PDFJS__*/</script>
 <script>/*__PDFWORKER__*/</script>
 <script>/*__CORE__*/</script>
+<script>/*__DOCXR__*/</script>
 <script>
 (function () {
   'use strict';
@@ -150,12 +151,21 @@
     return doc;
   }
 
+  // Word: текст, нумерация списков, таблицы и основная надпись из колонтитула раскладываются на листы,
+  // дальше работают те же правила, что и для PDF. Листы — по разметке, сохранённой Word, иначе приблизительно.
+  async function readDocx(file) {
+    var doc = await DOCXR.toDoc(file.name, new Uint8Array(await file.arrayBuffer()), PNK.buildPage);
+    doc.type = 'auto';
+    return doc;
+  }
+
   async function addFiles(list) {
-    var files = Array.prototype.filter.call(list, function (f) { return /\.pdf$/i.test(f.name) || f.type === 'application/pdf'; });
-    if (!files.length) { $('status').textContent = 'Нужны файлы PDF.'; return; }
+    var old = Array.prototype.filter.call(list, function (f) { return /\.(doc|rtf|odt)$/i.test(f.name); });
+    var files = Array.prototype.filter.call(list, function (f) { return /\.(pdf|docx)$/i.test(f.name) || f.type === 'application/pdf'; });
+    if (!files.length) { $('status').textContent = old.length ? 'Формат .doc, .rtf и .odt не читается: сохраните файл в Word как .docx или PDF.' : 'Нужны файлы PDF или Word (.docx).'; return; }
     for (var i = 0; i < files.length; i++) {
       $('status').textContent = 'Читаю: ' + files[i].name + ' (' + (i + 1) + ' из ' + files.length + ')';
-      try { docs.push(await readPdf(files[i])); }
+      try { docs.push(/\.docx$/i.test(files[i].name) ? await readDocx(files[i]) : await readPdf(files[i])); }
       catch (e) { docs.push({ name: files[i].name, pages: [], type: '', error: 'Не удалось прочитать файл: ' + (e && e.message ? e.message : e) }); }
       render();
     }
@@ -169,7 +179,7 @@
   function findingRow(f) {
     var row = el('div', 'finding'), side = el('div', 'side'), body = el('div');
     side.appendChild(el('span', 'chip ' + f.sev, SEV[f.sev]));
-    if (f.page !== undefined) side.appendChild(el('span', 'pg', f.page ? 'лист ' + f.page : 'документ'));
+    if (f.page !== undefined) side.appendChild(el('span', 'pg', f.page ? (f.approx ? 'около листа ' : 'лист ') + f.page : 'документ'));
     body.appendChild(el('div', 'msg', f.msg));
     if (f.snip) {
       var ctx = el('div', 'ctx');
@@ -197,7 +207,7 @@
     var out = $('out'); out.textContent = '';
     docs.forEach(function (doc) {
       if (doc.error) doc.findings = [{ sev: 'err', page: 0, title: 'Чтение файла', basis: '', msg: doc.error }];
-      else { doc.type = doc.userType !== undefined ? doc.userType : 'auto'; doc.findings = PNK.check(doc, disabled); }
+      else { doc.type = doc.userType !== undefined ? doc.userType : 'auto'; doc.findings = PNK.check(doc, disabled); if (doc.kind === 'docx' && !doc.docx.sheetsKnown) doc.findings.forEach(function (f) { f.approx = true; }); }
     });
     setFindings = docs.length > 1 ? PNK.checkSet(docs, disabled) : [];
     if (setFindings.length) {
