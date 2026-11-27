@@ -141,6 +141,7 @@
       <div class="bar">
         <button class="primary" id="savePdf">Скачать PDF</button>
         <button id="saveDocx">Скачать Word (.docx)</button>
+        <button id="saveSvg" title="Векторный рисунок для CAD, Inkscape, Visio">Скачать SVG</button>
         <span id="status"></span>
       </div>
       <div id="pv"><div class="empty">Собираем лист…</div></div>
@@ -228,6 +229,12 @@
     var next = fm === '2a' ? null : BLANK.build(Object.assign({}, base, { form: '2a', sideTop: false }));
     var bytes = BLANK.buildDocx(first, next, { font: $('font').value, italic: $('ital').checked, title: fileBase() });
     download(bytes, fileBase() + '.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+  });
+  $('saveSvg').addEventListener('click', function () {
+    // SVG — один файл на лист: первый лист и, если листов больше одного, лист формы 2а
+    var s = sheets(2), o = { font: $('font').value, italic: $('ital').checked, title: fileBase() };
+    download(BLANK.renderSvg(s.list[0], o), fileBase() + (s.list.length > 1 ? ' лист 1' : '') + '.svg', 'image/svg+xml');
+    if (s.list.length > 1) setTimeout(function () { download(BLANK.renderSvg(s.list[1], o), fileBase() + ' последующие листы.svg', 'image/svg+xml'); }, 400);
   });
   store(false);
   document.querySelectorAll('input, select').forEach(function (e) { e.addEventListener(e.type === 'text' || e.type === 'number' ? 'input' : 'change', later); });

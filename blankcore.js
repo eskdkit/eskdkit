@@ -226,6 +226,56 @@
     return await doc.save();
   }
 
+
+  /* ---------- SVG (один лист, единицы — мм) ---------- */
+  function renderSvg(g, opt) {
+    opt = opt || {};
+    var S = g.S, H = S.H, fam = opt.font || 'GOST type A, ISOCPEUR, Arial, sans-serif', ital = opt.italic ? ' font-style="italic"' : '';
+    function n(v) { return +v.toFixed(3); }
+    function cw(t, mm) { return t.length * mm * 0.52; } // оценка ширины строки
+    function wrap(text, w, mm) {
+      var words = str(text).split(' '), lines = [], cur = '';
+      words.forEach(function (x) { var c = cur ? cur + ' ' + x : x; if (!cur || cw(c, mm) <= w) cur = c; else { lines.push(cur); cur = x; } });
+      if (cur) lines.push(cur); return lines;
+    }
+    var out = ['<?xml version="1.0" encoding="UTF-8"?>',
+      '<svg xmlns="http://www.w3.org/2000/svg" width="' + S.W + 'mm" height="' + H + 'mm" viewBox="0 0 ' + S.W + ' ' + H + '">',
+      '<title>' + esc(opt.title || 'Бланк ЕСКД') + '</title>',
+      '<g fill="none" stroke="#000" stroke-linecap="square">'];
+    g.lines.forEach(function (l) {
+      out.push('<line x1="' + n(l[0]) + '" y1="' + n(H - l[1]) + '" x2="' + n(l[2]) + '" y2="' + n(H - l[3]) + '" stroke-width="' + (l[4] === K ? 0.6 : 0.25) + '"/>');
+    });
+    out.push('</g>', '<g fill="#000" font-family="' + esc(fam) + '"' + ital + '>');
+    g.texts.concat(g.copy.map(function (c) { return { t: c.t, x0: c.x0, y0: c.y0, x1: c.x1, y1: c.y1, s: 8, al: 'l', rot: 0 }; })).forEach(function (o) {
+      var t = str(o.t); if (!t && !o.sub) return;
+      var bw = o.rot === 90 ? o.y1 - o.y0 : o.x1 - o.x0, bh = o.rot === 90 ? o.x1 - o.x0 : o.y1 - o.y0;
+      var lines;
+      if (o.wrap) {
+        lines = (t ? wrap(t, bw - 2, o.s / PT) : []).map(function (x) { return { t: x, s: o.s }; });
+        if (o.sub) lines = lines.concat(wrap(o.sub, bw - 2, (o.s - 2) / PT).map(function (x) { return { t: x, s: o.s - 2 }; }));
+        while (lines.length > 1 && lines.reduce(function (a, l) { return a + l.s / PT * 1.25; }, 0) > bh - 1) lines.pop();
+      } else lines = [{ t: t, s: o.s }];
+      var lh = lines.map(function (l) { return l.s / PT * 1.25; }), tot = lh.reduce(function (a, b) { return a + b; }, 0), off = tot / 2;
+      var cx = (o.x0 + o.x1) / 2, cy = H - (o.y0 + o.y1) / 2;
+      lines.forEach(function (l, i) {
+        var mm = l.s / PT, w = cw(l.t, mm), fit = w > bw - 1 ? ' textLength="' + n(bw - 1) + '" lengthAdjust="spacingAndGlyphs"' : '';
+        var dy = -off + lh[i] / 2 + mm * 0.36; off -= lh[i];
+        var left = o.al === 'l', anchor = left && !fit ? 'start' : 'middle', a;
+        if (o.rot === 90) {
+          a = left ? -(bw / 2) + 0.7 : 0; if (left && fit) a = 0;
+          out.push('<text transform="translate(' + n(cx) + ' ' + n(cy) + ') rotate(-90)" x="' + n(a) + '" y="' + n(dy) + '" font-size="' + n(mm) + '" text-anchor="' + anchor + '"' + fit + '>' + esc(l.t) + '</text>');
+        } else if (o.rot === 180) {
+          out.push('<text transform="translate(' + n(cx) + ' ' + n(cy) + ') rotate(180)" x="0" y="' + n(dy) + '" font-size="' + n(mm) + '" text-anchor="middle"' + fit + '>' + esc(l.t) + '</text>');
+        } else {
+          a = left && !fit ? o.x0 + 0.7 : cx;
+          out.push('<text x="' + n(a) + '" y="' + n(cy + dy) + '" font-size="' + n(mm) + '" text-anchor="' + anchor + '"' + fit + '>' + esc(l.t) + '</text>');
+        }
+      });
+    });
+    out.push('</g>', '</svg>');
+    return out.join('\n');
+  }
+
   /* ---------- DOCX ---------- */
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function tw(mm) { return Math.round(mm * TW); }
@@ -362,26 +412,29 @@
   // first — геометрия первого листа, next — последующих (или null, если все листы одинаковы)
   function buildDocx(first, next, o) {
     o = o || {};
-    var S = first.S, lm = S.fx0 + 5, rm = S.W - S.fx1 + 5;
-    var topM = S.fy0 + (first.regions.g26 ? 14 : 0) + 5, botM = S.fy0 + (next ? next.regions.tb[3] - next.regions.tb[1] : first.regions.tb[3] - first.regions.tb[1]) + 5;
+    var S = first.S, gs = o.gapSide != null ? o.gapSide : 5, gt = o.gapTop != null ? o.gapTop : 5, lm = S.fx0 + gs, rm = S.W - S.fx1 + gs;
+    var topM = S.fy0 + (first.regions.g26 ? 14 : 0) + gt, botM = S.fy0 + (next ? next.regions.tb[3] - next.regions.tb[1] : first.regions.tb[3] - first.regions.tb[1]) + gt;
     var tinyH = 20 / 1440 * 25.4;
     var files = {};
     files['[Content_Types].xml'] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>' +
       '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>' +
       '<Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/><Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>' +
       (next ? '<Override PartName="/word/header2.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/><Override PartName="/word/footer2.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>' : '') +
+      (o.numberingXml ? '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' : '') +
       '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>';
     files['_rels/.rels'] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>';
     files['docProps/core.xml'] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>' + esc(o.title || 'Бланк ЕСКД') + '</dc:title><dc:creator>eskdkit.ru</dc:creator></cp:coreProperties>';
     var rels = '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>' +
       '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/><Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>' +
+      (o.numberingXml ? '<Relationship Id="rId7" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' : '') +
       (next ? '<Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header2.xml"/><Relationship Id="rId6" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer2.xml"/>' : '');
     files['word/_rels/document.xml.rels'] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + rels + '</Relationships>';
     var font = o.font || 'Arial', bodySz = Math.round((o.bodyPt || 12) * 2);
-    files['word/styles.xml'] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="' + esc(font) + '" w:hAnsi="' + esc(font) + '" w:cs="' + esc(font) + '" w:eastAsia="' + esc(font) + '"/>' + (o.italic ? '<w:i/>' : '') + '<w:sz w:val="' + bodySz + '"/><w:szCs w:val="' + bodySz + '"/><w:lang w:val="ru-RU"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="360" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>' +
+    files['word/styles.xml'] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="' + esc(font) + '" w:hAnsi="' + esc(font) + '" w:cs="' + esc(font) + '" w:eastAsia="' + esc(font) + '"/>' + (o.italic ? '<w:i/>' : '') + '<w:sz w:val="' + bodySz + '"/><w:szCs w:val="' + bodySz + '"/><w:lang w:val="ru-RU"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="' + (o.line || 360) + '" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>' +
       '<w:style w:type="paragraph" w:default="1" w:styleId="a"><w:name w:val="Normal"/><w:qFormat/><w:pPr><w:ind w:firstLine="' + tw(12.5) + '"/><w:jc w:val="both"/></w:pPr></w:style>' +
-      '<w:style w:type="table" w:default="1" w:styleId="a1"><w:name w:val="Normal Table"/><w:tblPr><w:tblInd w:w="0" w:type="dxa"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="0" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style></w:styles>';
-    files['word/settings.xml'] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:defaultTabStop w:val="709"/><w:characterSpacingControl w:val="doNotCompress"/><w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/></w:compat></w:settings>';
+      '<w:style w:type="table" w:default="1" w:styleId="a1"><w:name w:val="Normal Table"/><w:tblPr><w:tblInd w:w="0" w:type="dxa"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="0" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>' + (o.stylesXml || '') + '</w:styles>';
+    if (o.numberingXml) files['word/numbering.xml'] = o.numberingXml;
+    files['word/settings.xml'] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' + (o.updateFields ? '<w:updateFields w:val="true"/>' : '') + '<w:defaultTabStop w:val="709"/><w:characterSpacingControl w:val="doNotCompress"/><w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/></w:compat></w:settings>';
     // заголовок 1 / колонтитул 1 — первый лист; 2 — последующие
     files['word/header1.xml'] = headerXml(first, o);
     files['word/footer1.xml'] = footerXml(first, o, lm);
@@ -391,7 +444,7 @@
     var sect = '<w:sectPr>' + refs + '<w:pgSz w:w="' + tw(S.W) + '" w:h="' + tw(S.H) + '"' + (S.orient === 'L' ? ' w:orient="landscape"' : '') + '/>' +
       '<w:pgMar w:top="' + tw(topM) + '" w:right="' + tw(rm) + '" w:bottom="' + tw(botM) + '" w:left="' + tw(lm) + '" w:header="' + tw(S.fy0) + '" w:footer="' + tw(S.fy0 - tinyH) + '" w:gutter="0"/>' +
       (next ? '<w:titlePg/>' : '') + '</w:sectPr>';
-    var bodyText = (o.body || ['']).map(function (t) { return '<w:p>' + (t ? '<w:r><w:t xml:space="preserve">' + esc(t) + '</w:t></w:r>' : '') + '</w:p>'; }).join('');
+    var bodyText = o.bodyXml ? o.bodyXml : (o.body || ['']).map(function (t) { return '<w:p>' + (t ? '<w:r><w:t xml:space="preserve">' + esc(t) + '</w:t></w:r>' : '') + '</w:p>'; }).join('');
     files['word/document.xml'] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + NS + '><w:body>' + bodyText + sect + '</w:body></w:document>';
     return zip(files);
   }
@@ -419,6 +472,6 @@
     return out;
   }
 
-  var api = { FORMATS: FORMATS, DOCX_OK: DOCX_OK, sheet: sheet, build: build, renderPdf: renderPdf, buildDocx: buildDocx, regionTable: regionTable, zip: zip, VERSION: '0.1' };
+  var api = { FORMATS: FORMATS, DOCX_OK: DOCX_OK, sheet: sheet, build: build, renderPdf: renderPdf, renderSvg: renderSvg, buildDocx: buildDocx, regionTable: regionTable, zip: zip, VERSION: '0.1' };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.BLANK = api;
 })(typeof window !== 'undefined' ? window : globalThis);
